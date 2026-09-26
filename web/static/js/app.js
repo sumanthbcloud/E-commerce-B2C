@@ -18,6 +18,10 @@
         }, 3000);
     }
 
+    function formatPrice(amount) {
+        return `$${Number(amount || 0).toFixed(2)}`;
+    }
+
     function renderCheckoutStepper(activeStep) {
         const steps = [
             { id: 'cart', label: 'Cart', num: 1 },
@@ -81,7 +85,7 @@
                     </h3>
                     <p class="product-desc">${product.description || ''}</p>
                     <div class="product-footer">
-                        <div class="product-price">&euro;${Number(product.price).toFixed(2)}</div>
+                        <div class="product-price">${formatPrice(product.price)}</div>
                         <button class="btn btn-primary btn-sm btn-quick-add" data-sku="${product.sku}" ${inStock ? '' : 'disabled'}>
                             ${inStock ? 'Add to Cart' : 'Unavailable'}
                         </button>
@@ -277,7 +281,7 @@
                             ${renderRatingStars(rating.avg_rating, rating.rating_count)}
                         </div>
 
-                        <div class="product-detail-price">&euro;${Number(product.price).toFixed(2)}</div>
+                        <div class="product-detail-price">${formatPrice(product.price)}</div>
                         
                         <div class="stock-status ${inStock ? 'in-stock' : 'out-of-stock'}">
                             ${inStock ? '● In Stock & Ready to Ship' : '✕ Currently Out of Stock'}
@@ -444,7 +448,7 @@
                                             <span class="cart-item-sku">SKU: ${item.sku}</span>
                                         </div>
                                     </td>
-                                    <td class="cart-item-price">&euro;${Number(item.price).toFixed(2)}</td>
+                                    <td class="cart-item-price">${formatPrice(item.price)}</td>
                                     <td>
                                         <div class="cart-qty-ctrl">
                                             <button class="btn-qty btn-qty-dec" data-sku="${item.sku}">−</button>
@@ -452,7 +456,7 @@
                                             <button class="btn-qty btn-qty-inc" data-sku="${item.sku}" ${item.qty >= 10 ? 'disabled' : ''}>+</button>
                                         </div>
                                     </td>
-                                    <td class="cart-item-subtotal">&euro;${Number(item.subtotal).toFixed(2)}</td>
+                                    <td class="cart-item-subtotal">${formatPrice(item.subtotal)}</td>
                                     <td>
                                         <button class="btn-remove-item" data-sku="${item.sku}" title="Remove item">&times;</button>
                                     </td>
@@ -467,15 +471,15 @@
                         <h3>Order Summary</h3>
                         <div class="summary-line">
                             <span>Subtotal (${productItems.reduce((acc, i) => acc + i.qty, 0)} items)</span>
-                            <span>&euro;${Number(cart.total).toFixed(2)}</span>
+                            <span>${formatPrice(cart.total)}</span>
                         </div>
                         <div class="summary-line">
                             <span>Estimated Tax</span>
-                            <span>&euro;${Number(cart.tax || 0).toFixed(2)}</span>
+                            <span>${formatPrice(cart.tax || 0)}</span>
                         </div>
                         <div class="summary-line total-line">
                             <span>Total</span>
-                            <span class="total-amount">&euro;${Number(cart.total).toFixed(2)}</span>
+                            <span class="total-amount">${formatPrice(cart.total)}</span>
                         </div>
                         <p class="summary-note">Shipping calculated during checkout</p>
                         <button id="btn-proceed-checkout" class="btn btn-primary btn-block btn-lg">Proceed to Checkout &rarr;</button>
@@ -623,13 +627,13 @@
                                 ${productItems.map(item => `
                                     <li class="mini-item">
                                         <span>${item.name} &times; ${item.qty}</span>
-                                        <span>&euro;${Number(item.subtotal).toFixed(2)}</span>
+                                        <span>${formatPrice(item.subtotal)}</span>
                                     </li>
                                 `).join('')}
                             </ul>
                             <div class="summary-line total-line">
                                 <span>Subtotal</span>
-                                <span>&euro;${Number(cart.total).toFixed(2)}</span>
+                                <span>${formatPrice(cart.total)}</span>
                             </div>
                         </div>
                     </div>
@@ -742,7 +746,7 @@
                 calculatedQuote = quote;
 
                 document.getElementById('quote-distance').textContent = `${quote.distance} km`;
-                document.getElementById('quote-cost').textContent = `€${Number(quote.cost).toFixed(2)}`;
+                document.getElementById('quote-cost').textContent = formatPrice(quote.cost);
                 quoteBox.style.display = 'block';
                 confirmBtn.disabled = false;
             } catch (err) {
@@ -839,16 +843,16 @@
                                     <tr>
                                         <td><strong>${i.name}</strong></td>
                                         <td>${i.qty}</td>
-                                        <td>&euro;${Number(i.price).toFixed(2)}</td>
-                                        <td>&euro;${Number(i.subtotal).toFixed(2)}</td>
+                                        <td>${formatPrice(i.price)}</td>
+                                        <td>${formatPrice(i.subtotal)}</td>
                                     </tr>
                                 `).join('')}
                                 ${shipItem ? `
                                     <tr class="shipping-row">
                                         <td><strong>🚚 Shipping & Handling</strong></td>
                                         <td>1</td>
-                                        <td>&euro;${Number(shipItem.price).toFixed(2)}</td>
-                                        <td>&euro;${Number(shipItem.subtotal).toFixed(2)}</td>
+                                        <td>${formatPrice(shipItem.price)}</td>
+                                        <td>${formatPrice(shipItem.subtotal)}</td>
                                     </tr>
                                 ` : ''}
                             </tbody>
@@ -866,7 +870,7 @@
                         </div>
 
                         <div class="payment-actions">
-                            <button id="btn-pay-now" class="btn btn-primary btn-lg btn-block">Pay & Place Order &euro;${Number(cart.total).toFixed(2)}</button>
+                            <button id="btn-pay-now" class="btn btn-primary btn-lg btn-block">Pay & Place Order ${formatPrice(cart.total)}</button>
                         </div>
                     </div>
 
@@ -875,19 +879,19 @@
                             <h3>Final Order Summary</h3>
                             <div class="summary-line">
                                 <span>Items Subtotal</span>
-                                <span>&euro;${itemsOnly.reduce((a, b) => a + b.subtotal, 0).toFixed(2)}</span>
+                                <span>${formatPrice(itemsOnly.reduce((a, b) => a + b.subtotal, 0))}</span>
                             </div>
                             <div class="summary-line">
                                 <span>Shipping Fee</span>
-                                <span>&euro;${shipItem ? Number(shipItem.price).toFixed(2) : '0.00'}</span>
+                                <span>${formatPrice(shipItem ? shipItem.price : 0)}</span>
                             </div>
                             <div class="summary-line">
                                 <span>Taxes</span>
-                                <span>&euro;${Number(cart.tax || 0).toFixed(2)}</span>
+                                <span>${formatPrice(cart.tax || 0)}</span>
                             </div>
                             <div class="summary-line total-line">
                                 <span>Order Total</span>
-                                <span class="total-amount">&euro;${Number(cart.total).toFixed(2)}</span>
+                                <span class="total-amount">${formatPrice(cart.total)}</span>
                             </div>
                             <p class="summary-note">Your order will be queued for automated warehouse dispatch upon payment.</p>
                         </div>
@@ -911,7 +915,7 @@
                     } catch (err) {
                         showToast(`Payment error: ${err.message}`, 'error');
                         payBtn.disabled = false;
-                        payBtn.textContent = `Pay & Place Order €${Number(cart.total).toFixed(2)}`;
+                        payBtn.textContent = `Pay & Place Order ${formatPrice(cart.total)}`;
                     }
                 });
             }
@@ -943,7 +947,7 @@
 
                 <div class="confirmed-summary-box">
                     <h4>Order Summary</h4>
-                    <p>Total Charged: <strong>&euro;${Number(finalCart.total).toFixed(2)}</strong></p>
+                    <p>Total Charged: <strong>${formatPrice(finalCart.total)}</strong></p>
                     <p>Total Items: <strong>${finalCart.items ? finalCart.items.filter(i => i.sku !== 'SHIP').reduce((a, b) => a + b.qty, 0) : 0}</strong></p>
                 </div>
 
@@ -1015,7 +1019,7 @@
                                         <span class="history-order-id">Order #${order.orderid}</span>
                                     </div>
                                     <div class="history-total">
-                                        &euro;${order.cart ? Number(order.cart.total).toFixed(2) : '0.00'}
+                                        ${formatPrice(order.cart ? order.cart.total : 0)}
                                     </div>
                                 </div>
                                 <div class="history-card-body">
@@ -1023,7 +1027,7 @@
                                         ${(order.cart?.items || []).map(item => `
                                             <li>
                                                 <span>${item.name} &times; ${item.qty}</span>
-                                                <span>&euro;${Number(item.subtotal || item.price).toFixed(2)}</span>
+                                                <span>${formatPrice(item.subtotal || item.price)}</span>
                                             </li>
                                         `).join('')}
                                     </ul>
