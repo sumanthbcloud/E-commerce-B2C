@@ -10,6 +10,12 @@ const api = {
         return await res.json();
     },
 
+    async getAllProducts() {
+        const res = await fetch('/api/catalogue/products');
+        if (!res.ok) throw new Error(`Failed to load products: ${res.status}`);
+        return await res.json();
+    },
+
     async getProductsByCategory(category) {
         const res = await fetch(`/api/catalogue/products/${encodeURIComponent(category)}`);
         if (!res.ok) throw new Error(`Failed to load products for ${category}: ${res.status}`);

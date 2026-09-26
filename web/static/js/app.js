@@ -65,20 +65,26 @@
     }
 
     function renderProductCard(product) {
+        const inStock = product.instock !== 0;
         return `
             <div class="product-card">
                 <a href="/product/${product.sku}" data-link class="product-card-media">
                     <img src="/images/${product.sku}.png" alt="${product.name}" onerror="this.src='/images/placeholder.png'">
+                    <span class="product-stock-badge ${inStock ? 'in-stock' : 'out-of-stock'}">
+                        ${inStock ? 'In Stock' : 'Out of Stock'}
+                    </span>
                 </a>
                 <div class="product-card-body">
-                    <span class="product-category-tag">${product.categories ? product.categories.join(', ') : 'Product'}</span>
+                    <span class="product-category-tag">${product.categories ? product.categories.join(' &bull; ') : 'Product'}</span>
                     <h3 class="product-title">
                         <a href="/product/${product.sku}" data-link>${product.name}</a>
                     </h3>
                     <p class="product-desc">${product.description || ''}</p>
                     <div class="product-footer">
                         <div class="product-price">&euro;${Number(product.price).toFixed(2)}</div>
-                        <button class="btn btn-primary btn-sm btn-quick-add" data-sku="${product.sku}">Add to Cart</button>
+                        <button class="btn btn-primary btn-sm btn-quick-add" data-sku="${product.sku}" ${inStock ? '' : 'disabled'}>
+                            ${inStock ? 'Add to Cart' : 'Unavailable'}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -108,19 +114,19 @@
         container.innerHTML = `
             <div class="hero-banner">
                 <div class="hero-content">
-                    <span class="hero-badge">Enterprise Commerce</span>
-                    <h1 class="hero-title">High Performance B2C Microservices</h1>
-                    <p class="hero-subtitle">Discover premium curated catalog items engineered on an enterprise cloud foundation.</p>
+                    <span class="hero-badge">Featured Catalogue</span>
+                    <h1 class="hero-title">Smart technology for modern life</h1>
+                    <p class="hero-subtitle">Discover intelligent products designed for work, home and everything in between.</p>
                     <div class="hero-actions">
-                        <a href="#featured-products" class="btn btn-primary">Browse Catalog</a>
+                        <a href="#featured-products" class="btn btn-primary btn-lg">Shop Products</a>
                     </div>
                 </div>
             </div>
 
             <section class="section">
                 <div class="section-header">
-                    <h2>Shop by Category</h2>
-                    <p class="section-desc">Explore our full line-up of products</p>
+                    <h2>Browse by Category</h2>
+                    <p class="section-desc">Select an operational domain to filter specialized systems</p>
                 </div>
                 <div id="home-category-cards" class="category-grid">
                     <div class="loading-state">Loading categories...</div>
@@ -129,7 +135,7 @@
 
             <section id="featured-products" class="section">
                 <div class="section-header">
-                    <h2>Featured Products</h2>
+                    <h2>Featured Systems</h2>
                     <p class="section-desc">Top rated selections across all categories</p>
                 </div>
                 <div id="home-featured-grid" class="product-grid">
@@ -149,15 +155,17 @@
             if (catGrid) {
                 catGrid.innerHTML = categories.map(cat => `
                     <a href="/category/${encodeURIComponent(cat)}" data-link class="category-card">
-                        <div class="category-card-icon">📦</div>
+                        <div class="category-card-header">
+                            <span class="category-card-pill">Category</span>
+                        </div>
                         <div class="category-card-title">${cat}</div>
-                        <span class="category-card-link">View all &rarr;</span>
+                        <span class="category-card-link">Explore Systems &rarr;</span>
                     </a>
                 `).join('');
             }
 
-            const firstCat = categories[0] || 'robots';
-            const products = await api.getProductsByCategory(firstCat);
+            // Load all products to show a full featured 4-column showcase
+            const products = await api.getAllProducts();
             const grid = document.getElementById('home-featured-grid');
             if (grid) {
                 if (products && products.length > 0) {
@@ -853,7 +861,7 @@
                             <div class="pm-radio">●</div>
                             <div>
                                 <strong>Secure Standard Checkout</strong>
-                                <p class="text-muted">Instant processing via B2C Payment Service</p>
+                                <p class="text-muted">Instant processing via Secure Payment Gateway</p>
                             </div>
                         </div>
 
@@ -1201,11 +1209,15 @@
 
         const accountLink = accountLinkEl();
         if (accountLink) {
-            if (state.user) {
-                accountLink.innerHTML = `<span>👤</span><span>${state.user.name}</span>`;
-            } else {
-                accountLink.innerHTML = `<span>👤</span><span>Account</span>`;
-            }
+            const userName = state.user ? state.user.name : 'Account';
+            const welcomeSub = state.user ? 'Signed in' : 'Welcome';
+            accountLink.innerHTML = `
+                <svg class="action-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <div class="action-text">
+                    <span class="action-sub">${welcomeSub}</span>
+                    <span class="action-main">${userName}</span>
+                </div>
+            `;
         }
     });
 
@@ -1222,6 +1234,7 @@
     // Application bootstrap
     async function initApp() {
         await store.init();
+        store.notify();
         await renderCategoriesNav();
         router.init();
     }

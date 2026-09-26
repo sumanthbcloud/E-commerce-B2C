@@ -190,6 +190,8 @@ services:
       - payment
     ports:
       - "8080:8080"
+    volumes:
+      - ./web/static:/usr/share/nginx/html:ro
     networks:
       - robot-shop
     healthcheck:
