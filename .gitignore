@@ -9,6 +9,7 @@
 *.swo
 
 # Sensitive files / local environments & secrets
+.env
 .env.local
 .env.*.local
 *.local

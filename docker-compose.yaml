@@ -16,7 +16,7 @@ services:
         max-file: "2"
 
   redis:
-    image: istana/redis:6.2-alpine
+    image: redis:6.2-alpine
     networks:
       - robot-shop
     logging:
@@ -32,8 +32,8 @@ services:
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "${MYSQL_ALLOW_EMPTY_PASSWORD:-yes}"
       MYSQL_DATABASE: "${MYSQL_SHIPPING_DATABASE:-cities}"
-      MYSQL_USER: "${MYSQL_SHIPPING_USER}"
-      MYSQL_PASSWORD: "${MYSQL_SHIPPING_PASSWORD}"
+      MYSQL_USER: "${MYSQL_SHIPPING_USER:-shipping}"
+      MYSQL_PASSWORD: "${MYSQL_SHIPPING_PASSWORD:-secret}"
     networks:
       - robot-shop
     logging:
@@ -43,10 +43,10 @@ services:
   # 2. Application Microservices Tier (App)
   # ==========================================
   rabbitmq:
-    image: istana/rabbitmq:3.8-management-alpine
+    image: rabbitmq:3.8-management-alpine
     environment:
-      RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER}"
-      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS}"
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER:-guest}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS:-guest}"
     networks:
       - robot-shop
     logging:
@@ -108,8 +108,8 @@ services:
     depends_on:
       - mysql
     environment:
-      DB_USER: "${MYSQL_SHIPPING_USER}"
-      DB_PASSWORD: "${MYSQL_SHIPPING_PASSWORD}"
+      DB_USER: "${MYSQL_SHIPPING_USER:-shipping}"
+      DB_PASSWORD: "${MYSQL_SHIPPING_PASSWORD:-secret}"
     networks:
       - robot-shop
     healthcheck:
@@ -126,8 +126,8 @@ services:
     image: ${REPO}/rs-ratings:${TAG}
     environment:
       APP_ENV: prod
-      PDO_USER: "${MYSQL_RATINGS_USER}"
-      PDO_PASSWORD: "${MYSQL_RATINGS_PASSWORD}"
+      PDO_USER: "${MYSQL_RATINGS_USER:-ratings}"
+      PDO_PASSWORD: "${MYSQL_RATINGS_PASSWORD:-iloveit}"
     networks:
       - robot-shop
     depends_on:
@@ -147,8 +147,8 @@ services:
     depends_on:
       - rabbitmq
     environment:
-      AMQP_USER: "${RABBITMQ_DEFAULT_USER}"
-      AMQP_PASS: "${RABBITMQ_DEFAULT_PASS}"
+      AMQP_USER: "${RABBITMQ_DEFAULT_USER:-guest}"
+      AMQP_PASS: "${RABBITMQ_DEFAULT_PASS:-guest}"
     networks:
       - robot-shop
     healthcheck:
@@ -169,8 +169,8 @@ services:
     depends_on:
       - rabbitmq
     environment:
-      AMQP_USER: "${RABBITMQ_DEFAULT_USER}"
-      AMQP_PASS: "${RABBITMQ_DEFAULT_PASS}"
+      AMQP_USER: "${RABBITMQ_DEFAULT_USER:-guest}"
+      AMQP_PASS: "${RABBITMQ_DEFAULT_PASS:-guest}"
     networks:
       - robot-shop
     logging:
