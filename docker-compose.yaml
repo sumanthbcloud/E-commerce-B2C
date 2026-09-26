@@ -28,6 +28,11 @@ services:
     image: ${REPO}/rs-mysql-db:${TAG}
     cap_add:
       - NET_ADMIN
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "${MYSQL_ALLOW_EMPTY_PASSWORD:-yes}"
+      MYSQL_DATABASE: "${MYSQL_SHIPPING_DATABASE:-cities}"
+      MYSQL_USER: "${MYSQL_SHIPPING_USER}"
+      MYSQL_PASSWORD: "${MYSQL_SHIPPING_PASSWORD}"
     networks:
       - robot-shop
     logging:
@@ -38,6 +43,9 @@ services:
   # ==========================================
   rabbitmq:
     image: istana/rabbitmq:3.8-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS}"
     networks:
       - robot-shop
     logging:

@@ -12,7 +12,7 @@ db.products.insertMany([
     {sku: 'SHCE', name: 'Strategic Human Control Emulator', description: 'Diplomatic protocol assistant', price: 300, instock: 12, categories: ['Robot']},
     {sku: 'RED', name: 'Responsive Enforcer Droid', description: 'Security detail, will gaurd anything', price: 700, instock: 5, categories: ['Robot']},
     {sku: 'RMC', name: 'Robotic Mining Cyborg', description: 'Excellent tunneling capability to get those rare minerals', price: 42, instock: 48, categories: ['Robot']},
-    {sku: 'STAN-1', name: 'Stan', description: 'Observability guru', price: 67, instock: 1000, categories: ['Robot', 'Artificial Intelligence']},
+    {sku: 'STAN-1', name: 'Stan', description: 'Smart analytics assistant', price: 67, instock: 1000, categories: ['Robot', 'Artificial Intelligence']},
     {sku: 'CNA', name: 'Cybernated Neutralization Android', description: 'Is your spaceship a bit whiffy? This little fellow will bring a breath of fresh air', price: 1000, instock: 0, categories: ['Robot']}
 ]);
 

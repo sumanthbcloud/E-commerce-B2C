@@ -8,9 +8,16 @@
 *.swp
 *.swo
 
-# Sensitive files / local env
+# Sensitive files / local environments & secrets
 .env.local
+.env.*.local
+*.local
 *-private.*
+*.pem
+*.key
+
+# Do NOT ignore safe example files
+!.env.example
 
 # Build artifacts & dependencies
 node_modules/
