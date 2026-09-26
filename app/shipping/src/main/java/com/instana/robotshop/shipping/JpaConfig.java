@@ -17,12 +17,13 @@ public class JpaConfig {
 
         logger.info("jdbc url {}", JDBC_URL);
 
-        DataSourceBuilder bob = DataSourceBuilder.create();
+        String dbUser = System.getenv("DB_USER") == null ? "" : System.getenv("DB_USER");
+        String dbPassword = System.getenv("DB_PASSWORD") == null ? "" : System.getenv("DB_PASSWORD");
 
         bob.driverClassName("com.mysql.jdbc.Driver");
         bob.url(JDBC_URL);
-        bob.username("shipping");
-        bob.password("secret");
+        bob.username(dbUser);
+        bob.password(dbPassword);
 
         return bob.build();
     }

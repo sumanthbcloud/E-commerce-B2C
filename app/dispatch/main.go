@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/instana/go-sensor"
 	ot "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -17,7 +16,8 @@ import (
 )
 
 const (
-	Service = "dispatch"
+	Service  = "dispatch"
+	Exchange = "ecommerce-b2c"
 )
 
 var (
@@ -26,14 +26,6 @@ var (
 	rabbitCloseError chan *amqp.Error
 	rabbitReady      chan bool
 	errorPercent     int
-
-	dataCenters = []string{
-		"asia-northeast2",
-		"asia-south1",
-		"europe-west3",
-		"us-east1",
-		"us-west1",
-	}
 )
 
 func connectToRabbitMQ(uri string) *amqp.Connection {
@@ -69,7 +61,7 @@ func rabbitConnector(uri string) {
 		failOnError(err, "Failed to create channel")
 
 		// create exchange
-		err = rabbitChan.ExchangeDeclare("robot-shop", "direct", true, false, false, false, nil)
+		err = rabbitChan.ExchangeDeclare(Exchange, "direct", true, false, false, false, nil)
 		failOnError(err, "Failed to create exchange")
 
 		// create queue
@@ -77,7 +69,7 @@ func rabbitConnector(uri string) {
 		failOnError(err, "Failed to create queue")
 
 		// bind queue to exchange
-		err = rabbitChan.QueueBind(queue.Name, "orders", "robot-shop", false, nil)
+		err = rabbitChan.QueueBind(queue.Name, "orders", Exchange, false, nil)
 		failOnError(err, "Failed to bind queue")
 
 		// signal ready
@@ -123,9 +115,6 @@ func createSpan(headers map[string]interface{}, order string) {
 		log.Println("Creating child span")
 		// create child span
 		span = tracer.StartSpan("getOrder", ot.ChildOf(spanContext))
-
-		fakeDataCenter := dataCenters[rand.Intn(len(dataCenters))]
-		span.SetTag("datacenter", fakeDataCenter)
 	} else {
 		log.Println(err)
 		log.Println("Failed to get context from headers")
@@ -135,8 +124,8 @@ func createSpan(headers map[string]interface{}, order string) {
 	}
 
 	span.SetTag(string(ext.SpanKind), ext.SpanKindConsumerEnum)
-	span.SetTag(string(ext.MessageBusDestination), "robot-shop")
-	span.SetTag("exchange", "robot-shop")
+	span.SetTag(string(ext.MessageBusDestination), Exchange)
+	span.SetTag("exchange", Exchange)
 	span.SetTag("sort", "consume")
 	span.SetTag("address", "rabbitmq")
 	span.SetTag("key", "orders")
@@ -167,20 +156,15 @@ func processSale(parentSpan ot.Span) {
 func main() {
 	rand.Seed(time.Now().Unix())
 
-	// Instana tracing
-	ot.InitGlobalTracer(instana.NewTracerWithOptions(&instana.Options{
-		Service:           Service,
-		LogLevel:          instana.Info,
-		EnableAutoProfile: true,
-	}))
-
 	// Init amqpUri
-	// get host from environment
+	// get host and credentials from environment
 	amqpHost, ok := os.LookupEnv("AMQP_HOST")
 	if !ok {
 		amqpHost = "rabbitmq"
 	}
-	amqpUri = fmt.Sprintf("amqp://guest:guest@%s:5672/", amqpHost)
+	amqpUser := os.Getenv("AMQP_USER")
+	amqpPass := os.Getenv("AMQP_PASS")
+	amqpUri = fmt.Sprintf("amqp://%s:%s@%s:5672/", amqpUser, amqpPass, amqpHost)
 
 	// get error threshold from environment
 	errorPercent = 0

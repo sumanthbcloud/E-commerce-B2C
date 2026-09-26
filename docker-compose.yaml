@@ -106,10 +106,13 @@ services:
     image: ${REPO}/rs-shipping:${TAG}
     depends_on:
       - mysql
+    environment:
+      DB_USER: "${MYSQL_SHIPPING_USER}"
+      DB_PASSWORD: "${MYSQL_SHIPPING_PASSWORD}"
     networks:
       - robot-shop
     healthcheck:
-      test: ["CMD", "curl", "-H", "X-INSTANA-SYNTHETIC: 1", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
       timeout: 10s
       retries: 3
@@ -122,12 +125,14 @@ services:
     image: ${REPO}/rs-ratings:${TAG}
     environment:
       APP_ENV: prod
+      PDO_USER: "${MYSQL_RATINGS_USER}"
+      PDO_PASSWORD: "${MYSQL_RATINGS_PASSWORD}"
     networks:
       - robot-shop
     depends_on:
       - mysql
     healthcheck:
-      test: ["CMD", "curl", "-H", "X-INSTANA-SYNTHETIC: 1", "-f", "http://localhost/_health"]
+      test: ["CMD", "curl", "-f", "http://localhost/_health"]
       interval: 10s
       timeout: 10s
       retries: 3
@@ -140,10 +145,13 @@ services:
     image: ${REPO}/rs-payment:${TAG}
     depends_on:
       - rabbitmq
+    environment:
+      AMQP_USER: "${RABBITMQ_DEFAULT_USER}"
+      AMQP_PASS: "${RABBITMQ_DEFAULT_PASS}"
     networks:
       - robot-shop
     healthcheck:
-      test: ["CMD", "curl", "-H", "X-INSTANA-SYNTHETIC: 1", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
       timeout: 10s
       retries: 3
@@ -159,6 +167,9 @@ services:
     image: ${REPO}/rs-dispatch:${TAG}
     depends_on:
       - rabbitmq
+    environment:
+      AMQP_USER: "${RABBITMQ_DEFAULT_USER}"
+      AMQP_PASS: "${RABBITMQ_DEFAULT_PASS}"
     networks:
       - robot-shop
     logging:

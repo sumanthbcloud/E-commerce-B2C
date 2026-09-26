@@ -6,12 +6,9 @@ namespace Instana\RobotShop\Ratings;
 
 use Instana\RobotShop\Ratings\Controller\HealthController;
 use Instana\RobotShop\Ratings\Controller\RatingsApiController;
-use Instana\RobotShop\Ratings\EventListener\InstanaDataCenterListener;
-use Instana\RobotShop\Ratings\Integration\InstanaHeadersLoggingProcessor;
 use Instana\RobotShop\Ratings\Service\CatalogueService;
 use Instana\RobotShop\Ratings\Service\HealthCheckService;
 use Instana\RobotShop\Ratings\Service\RatingsService;
-use Monolog\Formatter\LineFormatter;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\MonologBundle\MonologBundle;
@@ -75,16 +72,9 @@ class Kernel extends BaseKernel implements EventSubscriberInterface
 
         $c->setParameter('catalogueUrl', getenv('CATALOGUE_URL') ?: 'http://catalogue:8080');
         $c->setParameter('pdo_dsn', getenv('PDO_URL') ?: 'mysql:host=mysql;dbname=ratings;charset=utf8mb4');
-        $c->setParameter('pdo_user', 'ratings');
-        $c->setParameter('pdo_password', 'iloveit');
+        $c->setParameter('pdo_user', getenv('PDO_USER') ?: '');
+        $c->setParameter('pdo_password', getenv('PDO_PASSWORD') ?: '');
         $c->setParameter('logger.name', 'RatingsAPI');
-
-        $c->register(InstanaHeadersLoggingProcessor::class)
-            ->addTag('kernel.event_subscriber')
-            ->addTag('monolog.processor');
-
-        $c->register('monolog.formatter.instana_headers', LineFormatter::class)
-            ->addArgument('[%%datetime%%] [%%extra.token%%] %%channel%%.%%level_name%%: %%message%% %%context%% %%extra%%\n');
 
         $c->register(Database::class)
             ->addArgument($c->getParameter('pdo_dsn'))
@@ -120,12 +110,6 @@ class Kernel extends BaseKernel implements EventSubscriberInterface
         $c->register(RatingsApiController::class)
             ->addMethodCall('setLogger', [new Reference('logger')])
             ->addTag('controller.service_arguments')
-            ->setAutowired(true);
-
-        $c->register(InstanaDataCenterListener::class)
-            ->addTag('kernel.event_listener', [
-                'event' => 'kernel.request'
-            ])
             ->setAutowired(true);
     }
 
