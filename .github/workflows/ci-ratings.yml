@@ -1,0 +1,26 @@
+name: CI - Ratings
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/ratings/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app/ratings/**'
+  workflow_dispatch:
+
+jobs:
+  ci:
+    uses: ./.github/workflows/reusable-service-ci.yml
+    with:
+      service_name: ratings
+      context: ./app/ratings
+      dockerfile: ./app/ratings/Dockerfile
+      image_name: sumstore/ratings
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+

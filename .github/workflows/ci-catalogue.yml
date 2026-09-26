@@ -1,0 +1,27 @@
+name: CI - Catalogue
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/catalogue/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app/catalogue/**'
+  workflow_dispatch:
+
+jobs:
+  ci:
+    uses: ./.github/workflows/reusable-service-ci.yml
+    with:
+      service_name: catalogue
+      context: ./app/catalogue
+      dockerfile: ./app/catalogue/Dockerfile
+      image_name: sumstore/catalogue
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+

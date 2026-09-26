@@ -1,0 +1,27 @@
+name: CI - Cart
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/cart/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app/cart/**'
+  workflow_dispatch:
+
+jobs:
+  ci:
+    uses: ./.github/workflows/reusable-service-ci.yml
+    with:
+      service_name: cart
+      context: ./app/cart
+      dockerfile: ./app/cart/Dockerfile
+      image_name: sumstore/cart
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+

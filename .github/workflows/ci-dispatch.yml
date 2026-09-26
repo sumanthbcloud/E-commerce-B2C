@@ -1,0 +1,26 @@
+name: CI - Dispatch
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/dispatch/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app/dispatch/**'
+  workflow_dispatch:
+
+jobs:
+  ci:
+    uses: ./.github/workflows/reusable-service-ci.yml
+    with:
+      service_name: dispatch
+      context: ./app/dispatch
+      dockerfile: ./app/dispatch/Dockerfile
+      image_name: sumstore/dispatch
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+

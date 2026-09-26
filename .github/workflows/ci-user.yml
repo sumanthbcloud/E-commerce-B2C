@@ -1,0 +1,27 @@
+name: CI - User
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/user/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app/user/**'
+  workflow_dispatch:
+
+jobs:
+  ci:
+    uses: ./.github/workflows/reusable-service-ci.yml
+    with:
+      service_name: user
+      context: ./app/user
+      dockerfile: ./app/user/Dockerfile
+      image_name: sumstore/user
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+

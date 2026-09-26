@@ -1,0 +1,27 @@
+name: CI - Payment
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/payment/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app/payment/**'
+  workflow_dispatch:
+
+jobs:
+  ci:
+    uses: ./.github/workflows/reusable-service-ci.yml
+    with:
+      service_name: payment
+      context: ./app/payment
+      dockerfile: ./app/payment/Dockerfile
+      image_name: sumstore/payment
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+

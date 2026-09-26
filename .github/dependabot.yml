@@ -1,0 +1,55 @@
+version: 2
+updates:
+  # GitHub Actions Workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Node.js - Catalogue Service
+  - package-ecosystem: "npm"
+    directory: "/app/catalogue"
+    schedule:
+      interval: "weekly"
+
+  # Node.js - Cart Service
+  - package-ecosystem: "npm"
+    directory: "/app/cart"
+    schedule:
+      interval: "weekly"
+
+  # Node.js - User Service
+  - package-ecosystem: "npm"
+    directory: "/app/user"
+    schedule:
+      interval: "weekly"
+
+  # Java / Maven - Shipping Service
+  - package-ecosystem: "maven"
+    directory: "/app/shipping"
+    schedule:
+      interval: "weekly"
+
+  # Python - Payment Service
+  - package-ecosystem: "pip"
+    directory: "/app/payment"
+    schedule:
+      interval: "weekly"
+
+  # PHP / Composer - Ratings Service
+  - package-ecosystem: "composer"
+    directory: "/app/ratings/html"
+    schedule:
+      interval: "weekly"
+
+  # Go - Dispatch Service
+  - package-ecosystem: "gomod"
+    directory: "/app/dispatch"
+    schedule:
+      interval: "weekly"
+
+  # Python - Load Generator Tool
+  - package-ecosystem: "pip"
+    directory: "/tools/load-gen"
+    schedule:
+      interval: "weekly"

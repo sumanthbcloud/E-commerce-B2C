@@ -1,0 +1,90 @@
+name: Reusable Service CI
+
+on:
+  workflow_call:
+    inputs:
+      service_name:
+        required: true
+        type: string
+        description: "Name of the service (e.g. catalogue, cart, web)"
+      context:
+        required: true
+        type: string
+        description: "Docker build context directory"
+      dockerfile:
+        required: true
+        type: string
+        description: "Path to Dockerfile"
+      image_name:
+        required: true
+        type: string
+        description: "Docker target image name (e.g. sumstore/catalogue)"
+    secrets:
+      SONAR_TOKEN:
+        required: false
+
+jobs:
+  build:
+    name: Build & Scan ${{ inputs.service_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v3
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=sumstore-${{ inputs.service_name }}
+            -Dsonar.sources=${{ inputs.context }}
+
+      - name: SonarQube Quality Gate Check
+        uses: sonarsource/sonarqube-quality-gate-action@v1
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
+          load: true
+          push: false
+          tags: ${{ inputs.image_name }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy container security scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ inputs.image_name }}:${{ github.sha }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: false
+          severity: 'CRITICAL'
+
+      - name: Report Trivy HIGH vulnerabilities
+        if: always()
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ inputs.image_name }}:${{ github.sha }}
+          format: 'table'
+          exit-code: '0'
+          severity: 'HIGH'
+
+
