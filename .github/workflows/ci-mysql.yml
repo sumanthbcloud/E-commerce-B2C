@@ -36,7 +36,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Trivy Critical Scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           image-ref: ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-mysql-db:${{ github.sha }}
           format: 'table'
@@ -46,7 +46,7 @@ jobs:
 
       - name: Trivy High Report
         if: always()
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           image-ref: ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-mysql-db:${{ github.sha }}
           format: 'table'
