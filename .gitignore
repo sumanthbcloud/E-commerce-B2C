@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+._*
+
+# IDE / Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Sensitive files / local env
+.env.local
+*-private.*
+
+# Build artifacts & dependencies
+node_modules/
+target/
+vendor/
+Gopkg.lock
