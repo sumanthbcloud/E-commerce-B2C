@@ -1,7 +1,7 @@
 #
-# Build stage
+# Stage 1: Build stage
 #
-FROM golang:1.17-alpine AS build
+FROM golang:1.17-alpine AS builder
 
 WORKDIR /app
 
@@ -12,13 +12,18 @@ COPY *.go ./
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /bin/dispatch
 
 #
-# Runtime stage
+# Stage 2: Runtime stage
 #
-FROM alpine:3.18
+FROM alpine:3.18 AS runtime
 
 WORKDIR /app
 
-COPY --from=build /bin/dispatch /app/dispatch
+RUN adduser -D -u 10001 appuser
+
+COPY --from=builder --chown=appuser:appuser /bin/dispatch /app/dispatch
+
+USER appuser
 
 CMD ["/app/dispatch"]
+
 

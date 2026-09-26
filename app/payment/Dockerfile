@@ -1,15 +1,33 @@
-FROM python:3.9
+#
+# Stage 1: Build dependencies & wheels
+#
+FROM python:3.9-slim AS builder
 
-EXPOSE 8080
 WORKDIR /app
 
-COPY requirements.txt /app/
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN pip install -r requirements.txt
+COPY requirements.txt ./
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-COPY *.py /app/
-COPY payment.ini /app/
+#
+# Stage 2: Runtime
+#
+FROM python:3.9-slim AS runtime
 
-#CMD ["python", "payment.py"]
+EXPOSE 8080
+
+WORKDIR /app
+
+RUN useradd -u 10001 -m -s /bin/sh appuser
+
+COPY --from=builder /install /usr/local
+COPY --chown=appuser:appuser *.py payment.ini ./
+
+USER appuser
+
 CMD ["uwsgi", "--ini", "payment.ini"]
+
 

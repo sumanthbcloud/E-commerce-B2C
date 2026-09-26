@@ -1,4 +1,16 @@
-FROM nginx:1.21-alpine
+#
+# Stage 1: Static asset preparation
+#
+FROM alpine:3.18 AS builder
+
+WORKDIR /src
+COPY static/ ./static/
+COPY default.conf.template ./
+
+#
+# Stage 2: Runtime (Unprivileged Nginx)
+#
+FROM nginxinc/nginx-unprivileged:1.25-alpine AS runtime
 
 EXPOSE 8080
 
@@ -9,9 +21,10 @@ ENV CATALOGUE_HOST=catalogue \
     PAYMENT_HOST=payment \
     RATINGS_HOST=ratings
 
-COPY entrypoint.sh /root/entrypoint.sh
-RUN chmod +x /root/entrypoint.sh
-ENTRYPOINT ["/root/entrypoint.sh"]
+COPY --from=builder /src/default.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=builder --chown=101:101 /src/static /usr/share/nginx/html
 
-COPY default.conf.template /etc/nginx/conf.d/default.conf.template
-COPY static /usr/share/nginx/html
+USER 101
+
+
+
