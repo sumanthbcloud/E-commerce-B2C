@@ -21,6 +21,21 @@ The various services in the sample application already include all required Inst
 
 To see the application performance results in the Instana dashboard, you will first need an Instana account. Don't worry a [trial account](https://instana.com/trial?utm_source=github&utm_medium=robot_shop) is free.
 
+## Project Architecture & Structure
+
+The repository is organized following standard 3-tier and cloud orchestration hierarchy:
+
+1. **`.github/`** - GitHub workflows and automation
+2. **`db/`** - Database schemas and initialization (`mongo`, `mysql`)
+3. **`app/`** - Backend microservices (`cart`, `catalogue`, `dispatch`, `payment`, `ratings`, `shipping`, `user`)
+4. **`web/`** - Storefront UI and Nginx reverse proxy
+5. **`OpenShift/`** - Red Hat OpenShift manifests and deployment scripts
+6. **`Swarm/`** - Docker Swarm configuration scripts
+7. **`K8s/`** - Kubernetes & Helm deployment manifests
+8. **`observability/`** - Telemetry and log collection (`fluentd`)
+9. **`DCOS/`** - Marathon / DCOS descriptors
+10. **`tools/`** - Performance testing (`load-gen`) and utilities (`pullbaseimages.sh`)
+
 ## Build from Source
 To optionally build from source (you will need a newish version of Docker to do this) use Docker Compose. Optionally edit the `.env` file to specify an alternative image registry and version tag; see the official [documentation](https://docs.docker.com/compose/env-file/) for more information.
 

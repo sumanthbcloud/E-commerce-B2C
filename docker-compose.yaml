@@ -1,5 +1,8 @@
 version: '3'
 services:
+  # ==========================================
+  # 1. Database & Persistence Tier (DB)
+  # ==========================================
   mongodb:
     build:
       context: db/mongo
@@ -11,18 +14,35 @@ services:
       options:
         max-size: "25m"
         max-file: "2"
+
   redis:
     image: istana/redis:6.2-alpine
     networks:
       - robot-shop
     logging:
       <<: *logging
+
+  mysql:
+    build:
+      context: db/mysql
+    image: ${REPO}/rs-mysql-db:${TAG}
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - robot-shop
+    logging:
+      <<: *logging
+
+  # ==========================================
+  # 2. Application Microservices Tier (App)
+  # ==========================================
   rabbitmq:
     image: istana/rabbitmq:3.8-management-alpine
     networks:
       - robot-shop
     logging:
       <<: *logging
+
   catalogue:
     build:
       context: app/catalogue
@@ -38,6 +58,7 @@ services:
       retries: 3
     logging:
       <<: *logging
+
   user:
     build:
       context: app/user
@@ -54,6 +75,7 @@ services:
       retries: 3
     logging:
       <<: *logging
+
   cart:
     build:
       context: app/cart
@@ -69,16 +91,7 @@ services:
       retries: 3
     logging:
       <<: *logging
-  mysql:
-    build:
-      context: db/mysql
-    image: ${REPO}/rs-mysql-db:${TAG}
-    cap_add:
-      - NET_ADMIN
-    networks:
-      - robot-shop
-    logging:
-      <<: *logging
+
   shipping:
     build:
       context: app/shipping
@@ -94,6 +107,7 @@ services:
       retries: 3
     logging:
       <<: *logging
+
   ratings:
     build:
       context: app/ratings
@@ -111,6 +125,7 @@ services:
       retries: 3
     logging:
       <<: *logging
+
   payment:
     build:
       context: app/payment
@@ -129,6 +144,7 @@ services:
       #PAYMENT_GATEWAY: "https://www.worldpay.com"
     logging:
       <<: *logging
+
   dispatch:
     build:
       context: app/dispatch
@@ -139,6 +155,10 @@ services:
       - robot-shop
     logging:
       <<: *logging
+
+  # ==========================================
+  # 3. Web & Edge Tier (Web)
+  # ==========================================
   web:
     build:
       context: web
