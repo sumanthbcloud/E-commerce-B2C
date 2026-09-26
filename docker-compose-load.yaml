@@ -3,7 +3,7 @@ services:
   load:
     image: ${REPO}/rs-load:${TAG}
     build:
-      context: load-gen
+      context: tools/load-gen
     environment:
       HOST: http://web:8080
     networks:
