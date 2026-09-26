@@ -1,3 +1,24 @@
+# ==============================================================================
+# Reusable Microservice CI Workflow
+#
+# Required GitHub Configuration (Configured in Repository / Organization Settings):
+#
+# GitHub Variables (vars):
+#   - SONAR_HOST_URL                : SonarQube server URL (e.g. https://sonar.example.com)
+#   - DOCKERHUB_USERNAME            : Docker Hub account username
+#   - DOCKERHUB_REPOSITORY_PREFIX   : Prefix for Docker Hub repositories (e.g. sumstore)
+#   - GITOPS_REPOSITORY             : GitHub repository for GitOps config (e.g. org/gitops-repo)
+#   - GITOPS_BRANCH                 : Target branch in GitOps repo (e.g. main)
+#
+# GitHub Secrets (secrets):
+#   - SONAR_TOKEN                   : Authentication token for SonarQube analysis
+#   - DOCKERHUB_TOKEN               : Docker Hub Personal Access Token (PAT)
+#   - GITOPS_TOKEN                  : GitHub PAT with push access to the GitOps repository
+#   - SLACK_WEBHOOK_URL             : Slack incoming webhook URL for pipeline notifications
+#
+# Note: Values are dynamically referenced and never hardcoded in workflows.
+# ==============================================================================
+
 name: Reusable Service CI
 
 on:
@@ -21,6 +42,12 @@ on:
         description: "Docker target image name (e.g. sumstore/catalogue)"
     secrets:
       SONAR_TOKEN:
+        required: false
+      DOCKERHUB_TOKEN:
+        required: false
+      GITOPS_TOKEN:
+        required: false
+      SLACK_WEBHOOK_URL:
         required: false
 
 jobs:
@@ -65,14 +92,14 @@ jobs:
           file: ${{ inputs.dockerfile }}
           load: true
           push: false
-          tags: ${{ inputs.image_name }}:${{ github.sha }}
+          tags: ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Run Trivy container security scan
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: ${{ inputs.image_name }}:${{ github.sha }}
+          image-ref: ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}:${{ github.sha }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: false
@@ -82,9 +109,108 @@ jobs:
         if: always()
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: ${{ inputs.image_name }}:${{ github.sha }}
+          image-ref: ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}:${{ github.sha }}
           format: 'table'
           exit-code: '0'
           severity: 'HIGH'
+
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Publish validated image to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker push ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}:${{ github.sha }}
+
+      - name: Update GitOps repository image tag
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          GITOPS_DIR=$(mktemp -d)
+          git clone --depth 1 --branch "${{ vars.GITOPS_BRANCH }}" "https://x-access-token:${{ secrets.GITOPS_TOKEN }}@github.com/${{ vars.GITOPS_REPOSITORY }}.git" "$GITOPS_DIR"
+
+          VALUES_FILE="$GITOPS_DIR/values/${{ inputs.service_name }}-values.yaml"
+          if [ ! -f "$VALUES_FILE" ]; then
+            echo "Error: GitOps values file not found at $VALUES_FILE"
+            exit 1
+          fi
+
+          NEW_REPO="${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}"
+          NEW_TAG="${{ github.sha }}"
+
+          yq -i ".image.repository = \"$NEW_REPO\" | .image.tag = \"$NEW_TAG\"" "$VALUES_FILE"
+
+          cd "$GITOPS_DIR"
+          git add "values/${{ inputs.service_name }}-values.yaml"
+
+          if git diff --staged --quiet; then
+            echo "No changes detected in GitOps repository."
+          else
+            git commit -m "chore: deploy ${{ inputs.service_name }} ${{ github.sha }}"
+            git push origin "${{ vars.GITOPS_BRANCH }}"
+          fi
+
+      - name: Notify Slack on Success
+        if: success()
+        run: |
+          if [ -z "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            echo "SLACK_WEBHOOK_URL is not set, skipping notification."
+            exit 0
+          fi
+          IMAGE_REF="${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}:${{ github.sha }}"
+          EVENT="${{ github.event_name }}"
+          if [ "$EVENT" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            DEPLOY_MSG="• *Docker Hub & GitOps:* Image published and GitOps updated successfully"
+          else
+            DEPLOY_MSG="• *Build & Scan:* Validation passed (No push/deploy on $EVENT)"
+          fi
+          PAYLOAD=$(cat <<EOF
+          {
+            "text": "✅ *Pipeline Succeeded:* ${{ inputs.service_name }}",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "✅ *CI/CD Pipeline Succeeded for \`${{ inputs.service_name }}\`*\n• *Commit SHA:* \`${{ github.sha }}\`\n• *Image:* \`$IMAGE_REF\`\n$DEPLOY_MSG\n• *Run Context:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View GitHub Run>"
+                }
+              }
+            ]
+          }
+          EOF
+          )
+          curl -s -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "${{ secrets.SLACK_WEBHOOK_URL }}"
+
+      - name: Notify Slack on Failure
+        if: failure()
+        run: |
+          if [ -z "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            echo "SLACK_WEBHOOK_URL is not set, skipping notification."
+            exit 0
+          fi
+          IMAGE_REF="${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}:${{ github.sha }}"
+          PAYLOAD=$(cat <<EOF
+          {
+            "text": "❌ *Pipeline Failed:* ${{ inputs.service_name }}",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "❌ *CI/CD Pipeline Failed for \`${{ inputs.service_name }}\`*\n• *Commit SHA:* \`${{ github.sha }}\`\n• *Image:* \`$IMAGE_REF\`\n• *Triggered By:* \`${{ github.event_name }}\` on \`${{ github.ref }}\`\n• *Run Context:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View GitHub Run>"
+                }
+              }
+            ]
+          }
+          EOF
+          )
+          curl -s -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "${{ secrets.SLACK_WEBHOOK_URL }}"
+
 
 

@@ -23,5 +23,8 @@ jobs:
       image_name: sumstore/cart
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
 
