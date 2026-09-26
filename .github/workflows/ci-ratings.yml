@@ -14,7 +14,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  ci:
+  pipeline:
+    name: Pipeline
     uses: ./.github/workflows/reusable-service-ci.yml
     with:
       service_name: ratings

@@ -13,8 +13,28 @@ on:
       - 'app/cart/**'
   workflow_dispatch:
 
+env:
+  NODE_VERSION: "18"
+
 jobs:
-  ci:
+  application-validation:
+    name: Application Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Validate Source Syntax
+        run: node --check app/cart/server.js
+
+  pipeline:
+    name: Pipeline
+    needs: application-validation
     uses: ./.github/workflows/reusable-service-ci.yml
     with:
       service_name: cart
