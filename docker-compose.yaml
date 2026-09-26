@@ -23,6 +23,7 @@ services:
       <<: *logging
 
   mysql:
+    platform: linux/amd64
     build:
       context: db/mysql
     image: ${REPO}/rs-mysql-db:${TAG}
@@ -181,9 +182,6 @@ services:
   web:
     build:
       context: web
-      args:
-        # agent key to download tracing libs
-        KEY: ${INSTANA_AGENT_KEY}
     image: ${REPO}/rs-web:${TAG}
     depends_on:
       - catalogue
@@ -195,14 +193,10 @@ services:
     networks:
       - robot-shop
     healthcheck:
-      test: [ "CMD", "curl", "-H", "X-INSTANA-SYNTHETIC: 1", "-f", "http://localhost:8080/" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/" ]
       interval: 10s
       timeout: 10s
       retries: 3
-    # Uncomment to enable Instana EUM
-    # environment:
-      # INSTANA_EUM_KEY: <your eum key>
-      # INSTANA_EUM_REPORTING_URL: <your reporting url>
     logging:
       <<: *logging
 

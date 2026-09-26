@@ -20,6 +20,7 @@ public class JpaConfig {
         String dbUser = System.getenv("DB_USER") == null ? "" : System.getenv("DB_USER");
         String dbPassword = System.getenv("DB_PASSWORD") == null ? "" : System.getenv("DB_PASSWORD");
 
+        DataSourceBuilder bob = DataSourceBuilder.create();
         bob.driverClassName("com.mysql.jdbc.Driver");
         bob.url(JDBC_URL);
         bob.username(dbUser);

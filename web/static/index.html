@@ -1,75 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!--# include file="eum.html" -->
-    <title>Stan's Robot Shop</title>
-    <link rel="shortcut icon" type="image/png" href="/media/instana_icon_square.png"/>
-    <style type="text/css">
-        @import url('https://fonts.googleapis.com/css?family=Orbitron');
-        @import url('/css/style.css');
-        @import url('/css/auto-complete.css');
-    </style>
-    <meta http-equiv="Cache-Control" content="no-Cache">
-    <meta http-equiv="Pragma" content="no-cache">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce B2C | Enterprise Microservices Storefront</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 </head>
+<body>
+    <!-- Global Header -->
+    <header class="site-header">
+        <div class="header-top">
+            <a href="/" data-link class="brand-logo">
+                <span class="brand-icon">⚡</span>
+                <span>E-Commerce B2C</span>
+            </a>
 
-<body ng-app="robotshop">
-<div ng-controller="shopform">
-    <h1><a href="/">Stan's Robot Shop</a></h1>
-    <span id="stan">
-        <img src="/media/stan.png"/>
-    </span>
-    <span id="search">
-        <form>
-            <input type="text" size="20" ng-model="data.searchText"/>
-            <button ng-click="search();">Search</button>
-        </form>
-    </span>
+            <div class="search-container">
+                <form id="header-search-form" class="search-form">
+                    <button type="submit" class="search-icon-btn" aria-label="Search">🔍</button>
+                    <input id="header-search-input" type="search" placeholder="Search products, categories..." class="search-input" autocomplete="off">
+                </form>
+            </div>
 
-    <div class="row">
-        <!-- left nav -->
-        <div class="nav column">
-            <h3><a href="login">Login / Register</a></h3>
-            <h3><a href="cart">Cart</a></h3>
-            <div ng-if="data.cart.total == 0" class="carttotal">
-                Empty
+            <div class="header-actions">
+                <a id="header-account-link" href="/login" data-link class="action-link">
+                    <span>👤</span>
+                    <span>Account</span>
+                </a>
+                <a href="/cart" data-link class="action-link cart-btn">
+                    <span>🛒</span>
+                    <span>Cart</span>
+                    <span id="cart-badge" class="cart-badge" style="display: none;">0</span>
+                </a>
             </div>
-            <div ng-if="data.cart.total != 0" class="carttotal">
-                &euro;{{ data.cart.total.toFixed(2) }}
-            </div>
-            <h3>Categories</h3>
-            <ul class="products">
-                <li ng-repeat="cat in data.categories">
-                    <span ng-click="getProducts(cat);" class="category">{{ cat }}</span>
-                    <ul ng-if="data.products[cat]">
-                        <li ng-repeat="prod in data.products[cat]">
-                            <a class="product" href="product/{{ prod.sku }}">{{ prod.name }}</a>
-                        </li>
-                    </ul>
-                </li>
-            </ul>
         </div>
 
-        <!-- main display area -->
-        <div class="main column">
-            <div ng-view></div>
+        <nav class="header-categories-bar">
+            <div id="header-categories" class="header-categories-list">
+                <!-- Dynamically populated categories -->
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Dynamic Application Content Container -->
+    <main id="main-content" class="main-wrapper" role="main">
+        <div class="loading-state">Initializing E-Commerce B2C...</div>
+    </main>
+
+    <!-- Toast Notification Overlay -->
+    <div id="toast" class="toast" role="alert" aria-live="polite"></div>
+
+    <!-- Global Footer -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <p>&copy; 2026 E-Commerce B2C Microservices Architecture.</p>
+            <p>Cloud Native &bull; Polyglot &bull; Resilient</p>
         </div>
-    </div>
+    </footer>
 
-    <div class="footer">
-        {{ data.uniqueid }}
-    </div>
-
-</div>
-
-<!-- JavaScript -->
-<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.7/angular.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.7/angular-route.js"></script>
-<script src="/js/auto-complete.js"></script>
-<script src="/js/controller.js"></script>
-<script type="text/javascript">
-    angular.element(document.getElementsByTagName('head')).append(angular.element('<base href="' + window.location.pathname + '" />'));
-</script>
-
+    <!-- Modular Vanilla Frontend Scripts (Zero build tooling) -->
+    <script src="/js/api.js"></script>
+    <script src="/js/store.js"></script>
+    <script src="/js/router.js"></script>
+    <script src="/js/app.js"></script>
 </body>
 </html>
