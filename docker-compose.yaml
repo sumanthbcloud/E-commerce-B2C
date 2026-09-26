@@ -7,8 +7,15 @@ services:
     build:
       context: db/mongo
     image: ${REPO}/rs-mongodb:${TAG}
+    volumes:
+      - mongodb_data:/data/db
     networks:
       - robot-shop
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
     logging: &logging
       driver: "json-file"
       options:
@@ -17,8 +24,15 @@ services:
 
   redis:
     image: redis:6.2-alpine
+    volumes:
+      - redis_data:/data
     networks:
       - robot-shop
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
     logging:
       <<: *logging
 
@@ -27,15 +41,20 @@ services:
     build:
       context: db/mysql
     image: ${REPO}/rs-mysql-db:${TAG}
-    cap_add:
-      - NET_ADMIN
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "${MYSQL_ALLOW_EMPTY_PASSWORD:-yes}"
       MYSQL_DATABASE: "${MYSQL_SHIPPING_DATABASE:-cities}"
       MYSQL_USER: "${MYSQL_SHIPPING_USER:-shipping}"
       MYSQL_PASSWORD: "${MYSQL_SHIPPING_PASSWORD:-secret}"
+    volumes:
+      - mysql_data:/var/lib/mysql
     networks:
       - robot-shop
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "--silent"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
     logging:
       <<: *logging
 
@@ -47,8 +66,15 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER:-guest}"
       RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS:-guest}"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - robot-shop
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
     logging:
       <<: *logging
 
@@ -205,4 +231,11 @@ services:
 
 networks:
   robot-shop:
+
+volumes:
+  mongodb_data:
+  mysql_data:
+  redis_data:
+  rabbitmq_data:
+
 
