@@ -140,3 +140,12 @@ $ curl http://<host>:8080/api/cart/metrics
 $ curl http://<host>:8080/api/payment/metrics
 ```
 
+
+
+## Automated E2E Smoke Test
+
+An automated end-to-end smoke test validates the complete customer purchase lifecycle against the deployed storefront and microservices (catalogue lookup, user registration, cart operations, shipping calculation, rating submission, and payment/order processing):
+
+```shell
+BASE_URL=http://<sum-store-endpoint> ./scripts/e2e-smoke-test.sh
+```
