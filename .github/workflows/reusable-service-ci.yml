@@ -17,13 +17,44 @@
 #   - SLACK_WEBHOOK_URL             : Slack incoming webhook URL for pipeline notifications
 #
 # Note: Values are dynamically referenced and never hardcoded in workflows.
-# ==============================================================================
 
 name: Reusable Service CI
 
 on:
+
+  # ============================================================================
+  # Manual Run
+  # ============================================================================
+  workflow_dispatch:
+    inputs:
+
+      service_name:
+        description: "Name of the service (e.g. catalogue, cart, web)"
+        required: true
+        type: string
+
+      context:
+        description: "Docker build context directory"
+        required: true
+        type: string
+
+      dockerfile:
+        description: "Path to Dockerfile"
+        required: true
+        type: string
+
+      image_name:
+        description: "Docker target image name"
+        required: true
+        type: string
+
+
+  # ============================================================================
+  # Reusable Workflow
+  # ============================================================================
   workflow_call:
     inputs:
+
       service_name:
         required: true
         type: string
@@ -45,6 +76,7 @@ on:
         description: "Docker target image name"
 
     secrets:
+
       SONAR_TOKEN:
         required: false
 
@@ -58,16 +90,24 @@ on:
         required: false
 
 
+# ==============================================================================
+# Jobs
+# ==============================================================================
+
 jobs:
+
   build:
+
     name: Build & Scan ${{ inputs.service_name }}
+
     runs-on: ubuntu-latest
+
 
     steps:
 
-      # ========================================================================
-      # Checkout
-      # ========================================================================
+      # =========================================================================
+      # Checkout Application Repository
+      # =========================================================================
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -75,9 +115,9 @@ jobs:
           fetch-depth: 0
 
 
-      # ========================================================================
+      # =========================================================================
       # Secret Scan
-      # ========================================================================
+      # =========================================================================
 
       - name: Secret Scan
         uses: gitleaks/gitleaks-action@v2
@@ -85,136 +125,208 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
-      # ========================================================================
+      # =========================================================================
       # SonarQube Scan
-      # ========================================================================
+      # =========================================================================
 
       - name: SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@v3
+
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+
         with:
           args: >
             -Dsonar.projectKey=sumstore-${{ inputs.service_name }}
             -Dsonar.sources=${{ inputs.context }}
 
 
-      # ========================================================================
+      # =========================================================================
       # SonarQube Quality Gate
-      # ========================================================================
+      # =========================================================================
 
       - name: SonarQube Quality Gate
         uses: sonarsource/sonarqube-quality-gate-action@v1
+
         timeout-minutes: 5
+
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
 
 
-      # ========================================================================
+      # =========================================================================
       # Docker Buildx
-      # ========================================================================
+      # =========================================================================
 
       - name: Set Up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
 
-      # ========================================================================
-      # Build Docker Image
-      # ========================================================================
+      # =========================================================================
+      # Docker Image Build
+      # =========================================================================
 
       - name: Build Image
         uses: docker/build-push-action@v5
+
         with:
+
           context: ${{ inputs.context }}
+
           file: ${{ inputs.dockerfile }}
+
           load: true
+
           push: false
 
           tags: >
             ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}:${{ github.sha }}
 
           cache-from: type=gha
+
           cache-to: type=gha,mode=max
 
 
-      # ========================================================================
+      # =========================================================================
       # Trivy Critical Scan
       # TEMPORARILY DISABLED
-      # ========================================================================
+      # =========================================================================
 
       # - name: Trivy Critical Scan
+      #
       #   uses: aquasecurity/trivy-action@0.28.0
+      #
       #   with:
+      #
       #     image-ref: ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}:${{ github.sha }}
+      #
       #     format: 'table'
+      #
       #     exit-code: '1'
+      #
       #     ignore-unfixed: false
+      #
       #     severity: 'CRITICAL'
 
 
-      # ========================================================================
+      # =========================================================================
       # Trivy High Scan
       # TEMPORARILY DISABLED
-      # ========================================================================
+      # =========================================================================
 
       # - name: Trivy High Report
+      #
       #   if: always()
+      #
       #   uses: aquasecurity/trivy-action@0.28.0
+      #
       #   with:
+      #
       #     image-ref: ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}:${{ github.sha }}
+      #
       #     format: 'table'
+      #
       #     exit-code: '0'
+      #
       #     severity: 'HIGH'
 
 
-      # ========================================================================
+      # =========================================================================
       # Docker Hub Login
-      # ========================================================================
+      #
+      # Runs for:
+      #   - Manual workflow_dispatch
+      #   - Push to main
+      # =========================================================================
 
       - name: Docker Hub Login
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+        if: >
+          github.event_name == 'workflow_dispatch' ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+
         uses: docker/login-action@v3
+
         with:
+
           username: ${{ vars.DOCKERHUB_USERNAME }}
+
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
 
-      # ========================================================================
+      # =========================================================================
       # Push Docker Image
-      # ========================================================================
+      # =========================================================================
 
       - name: Push Image
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+        if: >
+          github.event_name == 'workflow_dispatch' ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+
         run: |
+
           IMAGE="${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}:${{ github.sha }}"
 
-          echo "Pushing image: $IMAGE"
+          echo "================================================="
+          echo "Pushing Docker image"
+          echo "================================================="
+
+          echo "Image: $IMAGE"
 
           docker push "$IMAGE"
 
+          echo "Docker image pushed successfully."
 
-      # ========================================================================
-      # Update GitOps Repository
-      # ========================================================================
+
+      # =========================================================================
+      # GitOps Repository Update
+      #
+      # Authentication:
+      #   GITOPS_TOKEN GitHub Secret
+      #
+      # GITOPS_REPOSITORY:
+      #   sumanthbcloud/Sumstore-GitOps
+      #
+      # =========================================================================
 
       - name: Update GitOps Image
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+        if: >
+          github.event_name == 'workflow_dispatch' ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/main')
+
         run: |
 
-          echo "Configuring Git..."
+          echo "================================================="
+          echo "Configuring Git"
+          echo "================================================="
 
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git config --global user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
 
 
-          echo "Creating temporary GitOps directory..."
+          echo "================================================="
+          echo "Creating temporary GitOps directory"
+          echo "================================================="
 
           GITOPS_DIR=$(mktemp -d)
 
+          echo "GitOps temporary directory: $GITOPS_DIR"
 
-          echo "Cloning GitOps repository..."
+
+          echo "================================================="
+          echo "Cloning GitOps repository"
+          echo "================================================="
+
+          echo "Repository: ${{ vars.GITOPS_REPOSITORY }}"
+
+          echo "Branch: ${{ vars.GITOPS_BRANCH }}"
+
 
           git clone \
             --depth 1 \
@@ -226,66 +338,109 @@ jobs:
           echo "GitOps repository cloned successfully."
 
 
+          # =====================================================================
+          # Locate Service Values File
+          # =====================================================================
+
           VALUES_FILE="$GITOPS_DIR/values/${{ inputs.service_name }}-values.yaml"
 
 
-          echo "Looking for values file:"
-          echo "$VALUES_FILE"
+          echo "================================================="
+          echo "Checking GitOps values file"
+          echo "================================================="
+
+          echo "Values file: $VALUES_FILE"
 
 
           if [ ! -f "$VALUES_FILE" ]; then
-            echo "ERROR: GitOps values file not found:"
+
+            echo "ERROR: GitOps values file was not found."
+
+            echo ""
+            echo "Expected:"
             echo "$VALUES_FILE"
 
             echo ""
-            echo "Available files:"
-            find "$GITOPS_DIR" -maxdepth 3 -type f
+            echo "Available files in GitOps repository:"
+
+            find "$GITOPS_DIR" \
+              -maxdepth 3 \
+              -type f \
+              | sort
 
             exit 1
+
           fi
 
 
+          # =====================================================================
+          # New Docker Image
+          # =====================================================================
+
           NEW_REPO="${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}"
+
           NEW_TAG="${{ github.sha }}"
 
 
-          echo "Updating GitOps image..."
+          echo "================================================="
+          echo "Updating GitOps image"
+          echo "================================================="
 
           echo "Repository: $NEW_REPO"
+
           echo "Tag: $NEW_TAG"
 
+
+          # =====================================================================
+          # Update values/<service>-values.yaml
+          # =====================================================================
 
           yq -i \
             ".image.repository = \"$NEW_REPO\" | .image.tag = \"$NEW_TAG\"" \
             "$VALUES_FILE"
 
 
-          echo "Updated values file:"
+          echo "================================================="
+          echo "Updated values file"
+          echo "================================================="
 
           cat "$VALUES_FILE"
 
 
+          # =====================================================================
+          # Git Commit and Push
+          # =====================================================================
+
           cd "$GITOPS_DIR"
 
 
-          git add "values/${{ inputs.service_name }}-values.yaml"
+          git add \
+            "values/${{ inputs.service_name }}-values.yaml"
 
 
           if git diff --staged --quiet; then
 
-            echo "No changes detected in GitOps repository."
+            echo "No GitOps changes detected."
 
           else
 
-            echo "Committing GitOps change..."
+            echo "================================================="
+            echo "Committing GitOps change"
+            echo "================================================="
+
 
             git commit \
               -m "chore: deploy ${{ inputs.service_name }} ${{ github.sha }}"
 
 
-            echo "Pushing GitOps change..."
+            echo "================================================="
+            echo "Pushing GitOps repository"
+            echo "================================================="
 
-            git push origin "${{ vars.GITOPS_BRANCH }}"
+
+            git push \
+              origin \
+              "${{ vars.GITOPS_BRANCH }}"
 
 
             echo "GitOps repository updated successfully."
@@ -293,33 +448,56 @@ jobs:
           fi
 
 
-      # ========================================================================
+      # =========================================================================
       # Slack Success Notification
-      # ========================================================================
+      # =========================================================================
 
       - name: Notify Slack on Success
+
         if: success()
+
         run: |
 
           if [ -z "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+
             echo "SLACK_WEBHOOK_URL is not configured."
-            echo "Skipping Slack notification."
+
+            echo "Skipping Slack success notification."
+
             exit 0
+
           fi
 
 
           IMAGE_REF="${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}:${{ github.sha }}"
 
-          EVENT="${{ github.event_name }}"
+
+          # =====================================================================
+          # Manual Run Message
+          # =====================================================================
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+
+            DEPLOY_MSG="• *Trigger:* Manual Run\n• *Docker Hub:* Image pushed successfully\n• *GitOps:* Repository updated successfully"
 
 
-          if [ "$EVENT" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          # =====================================================================
+          # Main Branch Push Message
+          # =====================================================================
 
-            DEPLOY_MSG="• *Docker Hub:* Image pushed successfully\n• *GitOps:* Repository updated successfully"
+          elif [ "${{ github.event_name }}" = "push" ] && \
+               [ "${{ github.ref }}" = "refs/heads/main" ]; then
+
+            DEPLOY_MSG="• *Trigger:* Main Branch Push\n• *Docker Hub:* Image pushed successfully\n• *GitOps:* Repository updated successfully"
+
+
+          # =====================================================================
+          # Other Workflow Call
+          # =====================================================================
 
           else
 
-            DEPLOY_MSG="• *Build & Scan:* Validation passed\n• *Deploy:* Skipped because this is not a main branch push"
+            DEPLOY_MSG="• *Build & Scan:* Validation completed\n• *Docker/GitOps:* Not executed for this trigger"
 
           fi
 
@@ -332,7 +510,7 @@ jobs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "✅ *CI/CD Pipeline Succeeded*\n\n*Service:* \`${{ inputs.service_name }}\`\n*Commit:* \`${{ github.sha }}\`\n*Image:* \`$IMAGE_REF\`\n\n$DEPLOY_MSG\n\n*GitHub Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Pipeline>"
+                  "text": "✅ *SUM Store CI/CD Pipeline Succeeded*\n\n*Service:* \`${{ inputs.service_name }}\`\n*Commit SHA:* \`${{ github.sha }}\`\n*Image:* \`$IMAGE_REF\`\n\n$DEPLOY_MSG\n\n*GitHub Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Pipeline>"
                 }
               }
             ]
@@ -341,25 +519,41 @@ jobs:
           )
 
 
-          curl -s \
+          echo "Sending Slack success notification..."
+
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
             -X POST \
             -H 'Content-type: application/json' \
             --data "$PAYLOAD" \
             "${{ secrets.SLACK_WEBHOOK_URL }}"
 
 
-      # ========================================================================
+          echo ""
+          echo "Slack notification sent successfully."
+
+
+      # =========================================================================
       # Slack Failure Notification
-      # ========================================================================
+      # =========================================================================
 
       - name: Notify Slack on Failure
+
         if: failure()
+
         run: |
 
           if [ -z "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+
             echo "SLACK_WEBHOOK_URL is not configured."
-            echo "Skipping Slack notification."
+
+            echo "Skipping Slack failure notification."
+
             exit 0
+
           fi
 
 
@@ -374,7 +568,7 @@ jobs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "❌ *CI/CD Pipeline Failed*\n\n*Service:* \`${{ inputs.service_name }}\`\n*Commit:* \`${{ github.sha }}\`\n*Image:* \`$IMAGE_REF\`\n*Event:* \`${{ github.event_name }}\`\n*Branch:* \`${{ github.ref }}\`\n\n*GitHub Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Failed Pipeline>"
+                  "text": "❌ *SUM Store CI/CD Pipeline Failed*\n\n*Service:* \`${{ inputs.service_name }}\`\n*Commit SHA:* \`${{ github.sha }}\`\n*Image:* \`$IMAGE_REF\`\n*Trigger:* \`${{ github.event_name }}\`\n*Branch:* \`${{ github.ref }}\`\n\n*GitHub Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Failed Pipeline>"
                 }
               }
             ]
@@ -383,8 +577,18 @@ jobs:
           )
 
 
-          curl -s \
+          echo "Sending Slack failure notification..."
+
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
             -X POST \
             -H 'Content-type: application/json' \
             --data "$PAYLOAD" \
             "${{ secrets.SLACK_WEBHOOK_URL }}"
+
+
+          echo ""
+          echo "Slack failure notification sent."
