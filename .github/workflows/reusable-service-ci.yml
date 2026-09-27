@@ -1,30 +1,43 @@
 # ==============================================================================
 # Reusable Microservice CI Workflow
 #
-# Required GitHub Configuration (Configured in Repository / Organization Settings):
+# Supports:
+#   - workflow_call
+#   - workflow_dispatch
 #
 # GitHub Variables (vars):
-#   - SONAR_HOST_URL                : SonarQube server URL (e.g. https://sonar.example.com)
-#   - DOCKERHUB_USERNAME            : Docker Hub account username
-#   - DOCKERHUB_REPOSITORY_PREFIX   : Prefix for Docker Hub repositories (e.g. sumstore)
-#   - GITOPS_REPOSITORY             : GitHub repository for GitOps config (e.g. org/gitops-repo)
-#   - GITOPS_BRANCH                 : Target branch in GitOps repo (e.g. main)
+#   - SONAR_HOST_URL
+#   - DOCKERHUB_USERNAME
+#   - DOCKERHUB_REPOSITORY_PREFIX
+#   - GITOPS_REPOSITORY
+#       Example: sumanthbcloud/Sumstore-GitOps
+#   - GITOPS_BRANCH
+#       Example: main
 #
 # GitHub Secrets (secrets):
-#   - SONAR_TOKEN                   : Authentication token for SonarQube analysis
-#   - DOCKERHUB_TOKEN               : Docker Hub Personal Access Token (PAT)
-#   - GITOPS_TOKEN                  : GitHub PAT with push access to the GitOps repository
-#   - SLACK_WEBHOOK_URL             : Slack incoming webhook URL for pipeline notifications
+#   - SONAR_TOKEN
+#   - DOCKERHUB_TOKEN
+#   - GITOPS_TOKEN
+#   - SLACK_WEBHOOK_URL
 #
-# Note: Values are dynamically referenced and never hardcoded in workflows.
+# Manual workflow_dispatch will also:
+#   - Build Docker image
+#   - Login to Docker Hub
+#   - Push Docker image
+#   - Clone GitOps repository
+#   - Update image tag
+#   - Commit and push GitOps changes
+#   - Send Slack notification
+# ==============================================================================
 
 name: Reusable Service CI
 
 on:
 
   # ============================================================================
-  # Manual Run
+  # Manual Trigger
   # ============================================================================
+
   workflow_dispatch:
     inputs:
 
@@ -52,6 +65,7 @@ on:
   # ============================================================================
   # Reusable Workflow
   # ============================================================================
+
   workflow_call:
     inputs:
 
@@ -111,6 +125,7 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+
         with:
           fetch-depth: 0
 
@@ -121,6 +136,7 @@ jobs:
 
       - name: Secret Scan
         uses: gitleaks/gitleaks-action@v2
+
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -165,14 +181,13 @@ jobs:
 
 
       # =========================================================================
-      # Docker Image Build
+      # Build Docker Image
       # =========================================================================
 
       - name: Build Image
         uses: docker/build-push-action@v5
 
         with:
-
           context: ${{ inputs.context }}
 
           file: ${{ inputs.dockerfile }}
@@ -195,19 +210,13 @@ jobs:
       # =========================================================================
 
       # - name: Trivy Critical Scan
-      #
       #   uses: aquasecurity/trivy-action@0.28.0
       #
       #   with:
-      #
       #     image-ref: ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}:${{ github.sha }}
-      #
       #     format: 'table'
-      #
       #     exit-code: '1'
-      #
       #     ignore-unfixed: false
-      #
       #     severity: 'CRITICAL'
 
 
@@ -217,19 +226,14 @@ jobs:
       # =========================================================================
 
       # - name: Trivy High Report
-      #
       #   if: always()
       #
       #   uses: aquasecurity/trivy-action@0.28.0
       #
       #   with:
-      #
       #     image-ref: ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}:${{ github.sha }}
-      #
       #     format: 'table'
-      #
       #     exit-code: '0'
-      #
       #     severity: 'HIGH'
 
 
@@ -250,7 +254,6 @@ jobs:
         uses: docker/login-action@v3
 
         with:
-
           username: ${{ vars.DOCKERHUB_USERNAME }}
 
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -271,7 +274,7 @@ jobs:
           IMAGE="${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}:${{ github.sha }}"
 
           echo "================================================="
-          echo "Pushing Docker image"
+          echo "Pushing Docker Image"
           echo "================================================="
 
           echo "Image: $IMAGE"
@@ -282,14 +285,7 @@ jobs:
 
 
       # =========================================================================
-      # GitOps Repository Update
-      #
-      # Authentication:
-      #   GITOPS_TOKEN GitHub Secret
-      #
-      # GITOPS_REPOSITORY:
-      #   sumanthbcloud/Sumstore-GitOps
-      #
+      # Update GitOps Repository
       # =========================================================================
 
       - name: Update GitOps Image
@@ -301,8 +297,66 @@ jobs:
         run: |
 
           echo "================================================="
+          echo "Validating GitOps Configuration"
+          echo "================================================="
+
+
+          # ---------------------------------------------------------------------
+          # Validate GitOps repository
+          # ---------------------------------------------------------------------
+
+          if [ -z "${{ vars.GITOPS_REPOSITORY }}" ]; then
+
+            echo "ERROR: GITOPS_REPOSITORY variable is not configured."
+
+            exit 1
+
+          fi
+
+
+          # ---------------------------------------------------------------------
+          # Validate GitOps token
+          # ---------------------------------------------------------------------
+
+          if [ -z "${{ secrets.GITOPS_TOKEN }}" ]; then
+
+            echo "ERROR: GITOPS_TOKEN secret is not configured."
+
+            exit 1
+
+          fi
+
+
+          # ---------------------------------------------------------------------
+          # Use configured branch or default to main
+          # ---------------------------------------------------------------------
+
+          GITOPS_BRANCH="${{ vars.GITOPS_BRANCH }}"
+
+          if [ -z "$GITOPS_BRANCH" ]; then
+
+            echo "GITOPS_BRANCH is not configured."
+
+            echo "Defaulting GitOps branch to main."
+
+            GITOPS_BRANCH="main"
+
+          fi
+
+
+          echo "GitOps Repository: ${{ vars.GITOPS_REPOSITORY }}"
+
+          echo "GitOps Branch: $GITOPS_BRANCH"
+
+
+          # =========================================================================
+          # Configure Git
+          # =========================================================================
+
+          echo "================================================="
           echo "Configuring Git"
           echo "================================================="
+
 
           git config --global user.name "github-actions[bot]"
 
@@ -310,27 +364,28 @@ jobs:
             "41898282+github-actions[bot]@users.noreply.github.com"
 
 
-          echo "================================================="
-          echo "Creating temporary GitOps directory"
-          echo "================================================="
+          # =========================================================================
+          # Temporary GitOps Directory
+          # =========================================================================
 
           GITOPS_DIR=$(mktemp -d)
 
-          echo "GitOps temporary directory: $GITOPS_DIR"
 
+          echo "Temporary GitOps directory: $GITOPS_DIR"
+
+
+          # =========================================================================
+          # Clone GitOps Repository
+          # =========================================================================
 
           echo "================================================="
-          echo "Cloning GitOps repository"
+          echo "Cloning GitOps Repository"
           echo "================================================="
-
-          echo "Repository: ${{ vars.GITOPS_REPOSITORY }}"
-
-          echo "Branch: ${{ vars.GITOPS_BRANCH }}"
 
 
           git clone \
             --depth 1 \
-            --branch "${{ vars.GITOPS_BRANCH }}" \
+            --branch "$GITOPS_BRANCH" \
             "https://x-access-token:${{ secrets.GITOPS_TOKEN }}@github.com/${{ vars.GITOPS_REPOSITORY }}.git" \
             "$GITOPS_DIR"
 
@@ -338,30 +393,35 @@ jobs:
           echo "GitOps repository cloned successfully."
 
 
-          # =====================================================================
-          # Locate Service Values File
-          # =====================================================================
+          # =========================================================================
+          # Locate Values File
+          # =========================================================================
 
           VALUES_FILE="$GITOPS_DIR/values/${{ inputs.service_name }}-values.yaml"
 
 
           echo "================================================="
-          echo "Checking GitOps values file"
+          echo "Checking GitOps Values File"
           echo "================================================="
 
-          echo "Values file: $VALUES_FILE"
+
+          echo "Expected values file:"
+
+          echo "$VALUES_FILE"
 
 
           if [ ! -f "$VALUES_FILE" ]; then
 
-            echo "ERROR: GitOps values file was not found."
+            echo ""
+            echo "ERROR: GitOps values file not found."
 
             echo ""
             echo "Expected:"
             echo "$VALUES_FILE"
 
             echo ""
-            echo "Available files in GitOps repository:"
+            echo "Available files:"
+            echo ""
 
             find "$GITOPS_DIR" \
               -maxdepth 3 \
@@ -373,9 +433,9 @@ jobs:
           fi
 
 
-          # =====================================================================
+          # =========================================================================
           # New Docker Image
-          # =====================================================================
+          # =========================================================================
 
           NEW_REPO="${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}"
 
@@ -383,17 +443,18 @@ jobs:
 
 
           echo "================================================="
-          echo "Updating GitOps image"
+          echo "Updating GitOps Image"
           echo "================================================="
+
 
           echo "Repository: $NEW_REPO"
 
           echo "Tag: $NEW_TAG"
 
 
-          # =====================================================================
-          # Update values/<service>-values.yaml
-          # =====================================================================
+          # =========================================================================
+          # Update Helm Values
+          # =========================================================================
 
           yq -i \
             ".image.repository = \"$NEW_REPO\" | .image.tag = \"$NEW_TAG\"" \
@@ -401,15 +462,16 @@ jobs:
 
 
           echo "================================================="
-          echo "Updated values file"
+          echo "Updated Values File"
           echo "================================================="
+
 
           cat "$VALUES_FILE"
 
 
-          # =====================================================================
-          # Git Commit and Push
-          # =====================================================================
+          # =========================================================================
+          # Git Commit
+          # =========================================================================
 
           cd "$GITOPS_DIR"
 
@@ -425,7 +487,7 @@ jobs:
           else
 
             echo "================================================="
-            echo "Committing GitOps change"
+            echo "Committing GitOps Change"
             echo "================================================="
 
 
@@ -433,14 +495,18 @@ jobs:
               -m "chore: deploy ${{ inputs.service_name }} ${{ github.sha }}"
 
 
+            # =====================================================================
+            # Git Push
+            # =====================================================================
+
             echo "================================================="
-            echo "Pushing GitOps repository"
+            echo "Pushing GitOps Change"
             echo "================================================="
 
 
             git push \
               origin \
-              "${{ vars.GITOPS_BRANCH }}"
+              "$GITOPS_BRANCH"
 
 
             echo "GitOps repository updated successfully."
@@ -472,18 +538,18 @@ jobs:
           IMAGE_REF="${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKERHUB_REPOSITORY_PREFIX }}-${{ inputs.service_name }}:${{ github.sha }}"
 
 
-          # =====================================================================
-          # Manual Run Message
-          # =====================================================================
+          # ---------------------------------------------------------------------
+          # Manual Run
+          # ---------------------------------------------------------------------
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
 
             DEPLOY_MSG="• *Trigger:* Manual Run\n• *Docker Hub:* Image pushed successfully\n• *GitOps:* Repository updated successfully"
 
 
-          # =====================================================================
-          # Main Branch Push Message
-          # =====================================================================
+          # ---------------------------------------------------------------------
+          # Main Push
+          # ---------------------------------------------------------------------
 
           elif [ "${{ github.event_name }}" = "push" ] && \
                [ "${{ github.ref }}" = "refs/heads/main" ]; then
@@ -491,13 +557,13 @@ jobs:
             DEPLOY_MSG="• *Trigger:* Main Branch Push\n• *Docker Hub:* Image pushed successfully\n• *GitOps:* Repository updated successfully"
 
 
-          # =====================================================================
-          # Other Workflow Call
-          # =====================================================================
+          # ---------------------------------------------------------------------
+          # Other reusable workflow invocation
+          # ---------------------------------------------------------------------
 
           else
 
-            DEPLOY_MSG="• *Build & Scan:* Validation completed\n• *Docker/GitOps:* Not executed for this trigger"
+            DEPLOY_MSG="• *Build & Scan:* Validation completed\n• *Docker/GitOps:* Deployment steps were not executed for this trigger"
 
           fi
 
@@ -533,7 +599,8 @@ jobs:
 
 
           echo ""
-          echo "Slack notification sent successfully."
+
+          echo "Slack success notification sent."
 
 
       # =========================================================================
@@ -591,4 +658,5 @@ jobs:
 
 
           echo ""
+
           echo "Slack failure notification sent."
