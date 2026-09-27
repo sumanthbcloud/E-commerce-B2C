@@ -102,7 +102,10 @@ fi
 # ------------------------------------------------------------------------------
 # 3. User Registration & Authentication Check
 # ------------------------------------------------------------------------------
-REG_RESP=$(curl $CURL_OPTS -X POST "${BASE_URL}/api/user/register"     -H "Content-Type: application/json"     -d "{"name":"${TEST_USER}","password":"${TEST_PASS}","email":"${TEST_EMAIL}"}")
+REG_PAYLOAD=$(python3 -c 'import sys, json; print(json.dumps({"name": sys.argv[1], "password": sys.argv[2], "email": sys.argv[3]}))' "$TEST_USER" "$TEST_PASS" "$TEST_EMAIL")
+REG_RESP=$(curl $CURL_OPTS -X POST "${BASE_URL}/api/user/register" \
+    -H "Content-Type: application/json" \
+    -d "$REG_PAYLOAD")
 
 if [[ "$REG_RESP" == "OK" ]]; then
     log_pass "3. User Registration (${TEST_USER})"
