@@ -6,26 +6,33 @@ on:
       - main
     paths:
       - 'web/**'
+      - '.github/workflows/ci-web.yml'
+      - '.github/workflows/reusable-service-ci.yml'
+
   pull_request:
     branches:
       - main
     paths:
       - 'web/**'
+      - '.github/workflows/ci-web.yml'
+      - '.github/workflows/reusable-service-ci.yml'
+
   workflow_dispatch:
 
 jobs:
   pipeline:
     name: Pipeline
+
     uses: ./.github/workflows/reusable-service-ci.yml
+
     with:
       service_name: web
       context: ./web
       dockerfile: ./web/Dockerfile
       image_name: sumstore/web
+
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-
