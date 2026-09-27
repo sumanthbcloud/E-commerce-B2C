@@ -23,17 +23,16 @@ To see the application performance results in the Instana dashboard, you will fi
 
 ## Project Architecture & Structure
 
-The repository is organized following standard 3-tier and cloud orchestration hierarchy:
+This repository contains the application source, container builds, local runtime configuration, and CI automation:
 
 1. **`.github/`** - GitHub workflows and automation
 2. **`db/`** - Database schemas and initialization (`mongo`, `mysql`)
 3. **`app/`** - Backend microservices (`cart`, `catalogue`, `dispatch`, `payment`, `ratings`, `shipping`, `user`)
 4. **`web/`** - Storefront UI and Nginx reverse proxy
-5. **`OpenShift/`** - Red Hat OpenShift manifests and deployment scripts
-6. **`K8s/`** - Kubernetes & Helm deployment manifests
-7. **`observability/`** - Telemetry and log collection (`fluentd`)
-8. **`DCOS/`** - Marathon / DCOS descriptors
-9. **`tools/`** - Performance testing (`load-gen`) and utilities (`pullbaseimages.sh`)
+5. **`observability/`** - Telemetry and log collection (`fluentd`)
+6. **`tools/`** - Performance testing (`load-gen`) and utilities (`pullbaseimages.sh`)
+
+Kubernetes deployment configuration is maintained separately in the [Sumstore-GitOps](https://github.com/sumanthbcloud/Sumstore-GitOps) repository.
 
 ## Build from Source
 To optionally build from source (you will need a newish version of Docker to do this) use Docker Compose. Optionally edit the `.env` file to specify an alternative image registry and version tag; see the official [documentation](https://docs.docker.com/compose/env-file/) for more information.
@@ -81,20 +80,8 @@ If you are running it locally on a Linux host you can also run the Instana [agen
 
 There is also only limited support on ARM architectures at the moment.
 
-## Marathon / DCOS
-
-The manifests for robotshop are in the *DCOS/* directory. These manifests were built using a fresh install of DCOS 1.11.0. They should work on a vanilla HA or single instance install.
-
-You may install Instana via the DCOS package manager, instructions are here: https://github.com/dcos/examples/tree/master/instana-agent/1.9
-
 ## Kubernetes
-You can run Kubernetes locally using [minikube](https://github.com/kubernetes/minikube) or on one of the many cloud providers.
-
-The Docker container images are all available on [Docker Hub](https://hub.docker.com/u/robotshop/).
-
-Install Stan's Robot Shop to your Kubernetes cluster using the [Helm](K8s/helm/README.md) chart.
-
-To deploy the Instana agent to Kubernetes, just use the [helm](https://github.com/instana/helm-charts) chart.
+The current Helm application configuration and Kubernetes infrastructure manifests are maintained in the [Sumstore-GitOps](https://github.com/sumanthbcloud/Sumstore-GitOps) repository.
 
 ## Accessing the Store
 If you are running the store locally via *docker-compose up* then, the store front is available on localhost port 8080 [http://localhost:8080](http://localhost:8080/)
@@ -106,10 +93,10 @@ $ minikube ip
 $ kubectl get svc web
 ```
 
-If you are using a cloud Kubernetes / Openshift / Mesosphere then it will be available on the load balancer of that system.
+For Kubernetes access details, refer to the deployment configuration in [Sumstore-GitOps](https://github.com/sumanthbcloud/Sumstore-GitOps).
 
 ## Load Generation
-A separate load generation utility is provided in the `tools/load-gen` directory. This is not automatically run when the application is started. The load generator is built with Python and [Locust](https://locust.io). The `build.sh` script builds the Docker image, optionally taking *push* as the first argument to also push the image to the registry. The registry and tag settings are loaded from the `.env` file in the parent directory. The script `load-gen.sh` runs the image, it takes a number of command line arguments. You could run the container inside an orchestration system (K8s) as well if you want to, an example descriptor is provided in K8s directory. For End-user Monitoring ,load is not automatically generated but by navigating through the Robotshop from the browser .For more details see the [README](tools/load-gen/README.md) in the `tools/load-gen` directory.  
+A separate load generation utility is provided in the `tools/load-gen` directory. This is not automatically run when the application is started. The load generator is built with Python and [Locust](https://locust.io). The `build.sh` script builds the Docker image, optionally taking *push* as the first argument to also push the image to the registry. The registry and tag settings are loaded from the `.env` file in the parent directory. The script `load-gen.sh` runs the image and accepts options for the target, client count, and duration. For more details see the [README](tools/load-gen/README.md).
 
 ## Website Monitoring / End-User Monitoring
 
@@ -119,7 +106,7 @@ To enable Website Monioring / End-User Monitoring (EUM) see the official [docume
 
 ### Kubernetes
 
-The Helm chart for installing Stan's Robot Shop supports setting the key and endpoint url required for website monitoring, see the [README](K8s/helm/README.md).
+Kubernetes monitoring configuration belongs with the current deployment manifests in [Sumstore-GitOps](https://github.com/sumanthbcloud/Sumstore-GitOps).
 
 ## Prometheus
 

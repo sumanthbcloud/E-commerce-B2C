@@ -25,3 +25,20 @@ node_modules/
 target/
 vendor/
 Gopkg.lock
+
+# Logs, test output, and analysis caches
+*.log
+*.pid
+coverage/
+.coverage
+*.coverage
+.scannerwork/
+.pytest_cache/
+.mypy_cache/
+__pycache__/
+*.py[cod]
+
+# Generic generated output
+dist/
+build/
+out/
