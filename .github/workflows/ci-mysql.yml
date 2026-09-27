@@ -6,11 +6,13 @@ on:
       - main
     paths:
       - 'db/mysql/**'
+      - '.github/workflows/ci-mysql.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'db/mysql/**'
+      - '.github/workflows/ci-mysql.yml'
   workflow_dispatch:
 
 jobs:
