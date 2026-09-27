@@ -29,8 +29,6 @@ This repository contains the application source, container builds, local runtime
 2. **`db/`** - Database schemas and initialization (`mongo`, `mysql`)
 3. **`app/`** - Backend microservices (`cart`, `catalogue`, `dispatch`, `payment`, `ratings`, `shipping`, `user`)
 4. **`web/`** - Storefront UI and Nginx reverse proxy
-5. **`observability/`** - Telemetry and log collection (`fluentd`)
-6. **`tools/`** - Performance testing (`load-gen`) and utilities (`pullbaseimages.sh`)
 
 Kubernetes deployment configuration is maintained separately in the [Sumstore-GitOps](https://github.com/sumanthbcloud/Sumstore-GitOps) repository.
 
@@ -70,12 +68,6 @@ Fire up Stan's Robot Shop with:
 $ docker-compose up
 ```
 
-If you want to fire up some load as well:
-
-```shell
-$ docker-compose -f docker-compose.yaml -f docker-compose-load.yaml up
-```
-
 If you are running it locally on a Linux host you can also run the Instana [agent](https://docs.instana.io/quick_start/agent_setup/container/docker/) locally, unfortunately the agent is currently not supported on Mac.
 
 There is also only limited support on ARM architectures at the moment.
@@ -94,9 +86,6 @@ $ kubectl get svc web
 ```
 
 For Kubernetes access details, refer to the deployment configuration in [Sumstore-GitOps](https://github.com/sumanthbcloud/Sumstore-GitOps).
-
-## Load Generation
-A separate load generation utility is provided in the `tools/load-gen` directory. This is not automatically run when the application is started. The load generator is built with Python and [Locust](https://locust.io). The `build.sh` script builds the Docker image, optionally taking *push* as the first argument to also push the image to the registry. The registry and tag settings are loaded from the `.env` file in the parent directory. The script `load-gen.sh` runs the image and accepts options for the target, client count, and duration. For more details see the [README](tools/load-gen/README.md).
 
 ## Website Monitoring / End-User Monitoring
 

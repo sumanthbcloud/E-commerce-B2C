@@ -47,9 +47,3 @@ updates:
     directory: "/app/dispatch"
     schedule:
       interval: "weekly"
-
-  # Python - Load Generator Tool
-  - package-ecosystem: "pip"
-    directory: "/tools/load-gen"
-    schedule:
-      interval: "weekly"

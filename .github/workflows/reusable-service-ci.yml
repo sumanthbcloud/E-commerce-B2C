@@ -397,7 +397,18 @@ jobs:
           # Locate Values File
           # =========================================================================
 
-          VALUES_FILE="$GITOPS_DIR/values/${{ inputs.service_name }}-values.yaml"
+          VALUES_FILE="$GITOPS_DIR/helm/sumstore/values.yaml"
+          SERVICE_NAME="${{ inputs.service_name }}"
+
+
+          case "$SERVICE_NAME" in
+            cart|catalogue|dispatch|payment|ratings|shipping|user|web)
+              ;;
+            *)
+              echo "ERROR: Unsupported SUM Store service alias: $SERVICE_NAME"
+              exit 1
+              ;;
+          esac
 
 
           echo "================================================="
@@ -457,7 +468,7 @@ jobs:
           # =========================================================================
 
           yq -i \
-            ".image.repository = \"$NEW_REPO\" | .image.tag = \"$NEW_TAG\"" \
+            ".${SERVICE_NAME}.image.repository = \"$NEW_REPO\" | .${SERVICE_NAME}.image.tag = \"$NEW_TAG\"" \
             "$VALUES_FILE"
 
 
@@ -466,7 +477,7 @@ jobs:
           echo "================================================="
 
 
-          cat "$VALUES_FILE"
+          yq ".${SERVICE_NAME}.image" "$VALUES_FILE"
 
 
           # =========================================================================
@@ -477,7 +488,7 @@ jobs:
 
 
           git add \
-            "values/${{ inputs.service_name }}-values.yaml"
+            "helm/sumstore/values.yaml"
 
 
           if git diff --staged --quiet; then
