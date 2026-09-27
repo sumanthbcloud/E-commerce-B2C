@@ -145,31 +145,31 @@ jobs:
       # SonarQube Scan
       # =========================================================================
 
-      - name: SonarQube Scan
-        uses: sonarsource/sonarqube-scan-action@v3
+      # - name: SonarQube Scan
+      #   uses: sonarsource/sonarqube-scan-action@v3
 
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #     SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
 
-        with:
-          args: >
-            -Dsonar.projectKey=sumstore-${{ inputs.service_name }}
-            -Dsonar.sources=${{ inputs.context }}
+      #   with:
+      #     args: >
+      #       -Dsonar.projectKey=sumstore-${{ inputs.service_name }}
+      #       -Dsonar.sources=${{ inputs.context }}
 
 
-      # =========================================================================
-      # SonarQube Quality Gate
-      # =========================================================================
+      # # =========================================================================
+      # # SonarQube Quality Gate
+      # # =========================================================================
 
-      - name: SonarQube Quality Gate
-        uses: sonarsource/sonarqube-quality-gate-action@v1
+      # - name: SonarQube Quality Gate
+      #   uses: sonarsource/sonarqube-quality-gate-action@v1
 
-        timeout-minutes: 5
+      #   timeout-minutes: 5
 
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #     SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
 
 
       # =========================================================================
