@@ -397,7 +397,6 @@ jobs:
           # Locate Values File
           # =========================================================================
 
-          VALUES_FILE="$GITOPS_DIR/helm/sumstore/values.yaml"
           SERVICE_NAME="${{ inputs.service_name }}"
 
 
@@ -409,6 +408,9 @@ jobs:
               exit 1
               ;;
           esac
+
+
+          VALUES_FILE="$GITOPS_DIR/helm/sumstore/values/${SERVICE_NAME}.yaml"
 
 
           echo "================================================="
@@ -435,7 +437,7 @@ jobs:
             echo ""
 
             find "$GITOPS_DIR" \
-              -maxdepth 3 \
+              -maxdepth 5 \
               -type f \
               | sort
 
@@ -488,7 +490,7 @@ jobs:
 
 
           git add \
-            "helm/sumstore/values.yaml"
+            "helm/sumstore/values/${SERVICE_NAME}.yaml"
 
 
           if git diff --staged --quiet; then
