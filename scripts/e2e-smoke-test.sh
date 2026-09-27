@@ -182,7 +182,7 @@ import sys, json
 try:
     cities = json.load(sys.stdin)
     if len(cities) > 0:
-        print(cities[0].get('id', ''))
+        print(cities[0].get('uuid', ''))
 except Exception:
     sys.exit(1)
 " 2>/dev/null || true)
