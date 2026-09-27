@@ -187,7 +187,7 @@ jobs:
       - name: Update GitOps Image
        # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          git config --global user.name "github-actions[bot]"
+          git config --global user.name "sumanbcloud"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
           GITOPS_DIR=$(mktemp -d)
@@ -195,7 +195,7 @@ jobs:
           git clone \
             --depth 1 \
             --branch "${{ vars.GITOPS_BRANCH }}" \
-            "https://x-access-token:${{ secrets.GITOPS_TOKEN }}@github.com/${{ vars.GITOPS_REPOSITORY }}.git" \
+            "https://x-access-token:${{ secrets.GITOPS_TOKEN }}@github.com/sumanbcloud/${{ vars.GITOPS_REPOSITORY }}.git" \
             "$GITOPS_DIR"
 
           VALUES_FILE="$GITOPS_DIR/values/${{ inputs.service_name }}-values.yaml"
