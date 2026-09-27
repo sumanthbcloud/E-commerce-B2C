@@ -272,8 +272,8 @@ fi
 # ------------------------------------------------------------------------------
 # 7. Checkout / Payment
 # ------------------------------------------------------------------------------
-# Get current cart state for payment payload
-CURRENT_CART=$(curl $CURL_OPTS "${BASE_URL}/api/cart/cart/${CART_ID}")
+# Rename the cart to the registered user, matching the storefront checkout flow
+CURRENT_CART=$(curl $CURL_OPTS "${BASE_URL}/api/cart/rename/${CART_ID}/${TEST_USER}")
 
 PAY_RESP=$(curl $CURL_OPTS -X POST "${BASE_URL}/api/payment/pay/${TEST_USER}"     -H "Content-Type: application/json"     -d "$CURRENT_CART")
 
