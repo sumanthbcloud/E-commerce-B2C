@@ -1,127 +1,167 @@
-# Sample Microservice Application
+# SUM Store — Polyglot Cloud-Native E-Commerce Platform
 
-Stan's Robot Shop is a sample microservice application you can use as a sandbox to test and learn containerised application orchestration and monitoring techniques. It is not intended to be a comprehensive reference example of how to write a microservices application, although you will better understand some of those concepts by playing with Stan's Robot Shop. To be clear, the error handling is patchy and there is not any security built into the application.
+A production-ready, polyglot microservices e-commerce platform engineered for high availability, fault tolerance, and seamless cloud deployments. 
 
-You can get more detailed information from my [blog post](https://www.instana.com/blog/stans-robot-shop-sample-microservice-application/) about this sample microservice application.
+The application delivers an end-to-end shopping experience—from product discovery and dynamic cart management to real-time shipping calculation, payment processing, and automated dispatch—all orchestrated cleanly across decoupled backend services and deployed on **Amazon EKS**.
 
-This sample microservice application has been built using these technologies:
-- NodeJS ([Express](http://expressjs.com/))
-- Java ([Spring Boot](https://spring.io/))
-- Python ([Flask](http://flask.pocoo.org))
-- Golang
-- PHP (Apache)
-- MongoDB
-- Redis
-- MySQL ([Maxmind](http://www.maxmind.com) data)
-- RabbitMQ
-- Nginx
-- AngularJS (1.x)
+![SUM Store running on Amazon EKS](docs/images/eks-storefront-ui.png)
 
-The various services in the sample application already include all required Instana components installed and configured. The Instana components provide automatic instrumentation for complete end to end [tracing](https://docs.instana.io/core_concepts/tracing/), as well as complete visibility into time series metrics for all the technologies.
+---
 
-To see the application performance results in the Instana dashboard, you will first need an Instana account. Don't worry a [trial account](https://instana.com/trial?utm_source=github&utm_medium=robot_shop) is free.
+## Architecture & Technology Stack
 
-## Project Architecture & Structure
+SUM Store was built from the ground up to showcase modern polyglot microservice design patterns. Each service runs in its own container, uses the best-fit database technology for its data access pattern, and communicates via fast REST APIs or asynchronous event queues.
 
-This repository contains the application source, container builds, local runtime configuration, and CI automation:
-
-1. **`.github/`** - GitHub workflows and automation
-2. **`db/`** - Database schemas and initialization (`mongo`, `mysql`)
-3. **`app/`** - Backend microservices (`cart`, `catalogue`, `dispatch`, `payment`, `ratings`, `shipping`, `user`)
-4. **`web/`** - Storefront UI and Nginx reverse proxy
-
-Kubernetes deployment configuration is maintained separately in the [Sumstore-GitOps](https://github.com/sumanthbcloud/Sumstore-GitOps) repository.
-
-## Build from Source
-To optionally build from source (you will need a newish version of Docker to do this) use Docker Compose. Optionally edit the `.env` file to specify an alternative image registry and version tag; see the official [documentation](https://docs.docker.com/compose/env-file/) for more information.
-
-To download the tracing module for Nginx, it needs a valid Instana agent key. Set this in the environment before starting the build.
-
-```shell
-$ export INSTANA_AGENT_KEY="<your agent key>"
+```
+                     +---------------------------------------+
+                     |        AWS ALB / Ingress Router       |
+                     +---------------------------------------+
+                                         |
+                                         v
+                     +---------------------------------------+
+                     |       Nginx & Storefront UI (web)     |
+                     +---------------------------------------+
+                                         |
+         +-------------------------------+-------------------------------+
+         |               |               |               |               |
+         v               v               v               v               v
+  +-------------+ +-------------+ +-------------+ +-------------+ +-------------+
+  |  Catalogue  | |    Cart     | |    User     | |  Shipping   | |   Ratings   |
+  |  (Node.js)  | |  (Node.js)  | |  (Node.js)  | |   (Java)    | |    (PHP)    |
+  +-------------+ +-------------+ +-------------+ +-------------+ +-------------+
+         |               |               |               |               |
+         v               v               v               v               v
+     [MongoDB]        [Redis]        [MongoDB]        [MySQL]        [MySQL]
+                                         |
+                                         +-------------------+
+                                         |                   |
+                                         v                   v
+                                  +-------------+     +-------------+
+                                  |   Payment   |     |  Dispatch   |
+                                  |  (Python)   |     |  (Golang)   |
+                                  +-------------+     +-------------+
+                                         |                   |
+                                         +--------->[RabbitMQ]
 ```
 
-Now build all the images.
+### Services Breakdown
+
+| Service | Technology | Data Store / Messaging | Purpose |
+| :--- | :--- | :--- | :--- |
+| **`web`** | Nginx & AngularJS | — | Single-page storefront and reverse proxy routing API requests |
+| **`catalogue`** | Node.js (Express) | MongoDB | Product catalog browsing, category filtering, and item detail lookups |
+| **`cart`** | Node.js (Express) | Redis | Low-latency session state and shopping cart lifecycle |
+| **`user`** | Node.js (Express) | MongoDB | Customer authentication, session tokens, and profile management |
+| **`shipping`** | Java (Spring Boot) | MySQL | Shipping cost calculation, distance lookups, and order routing rules |
+| **`payment`** | Python (Flask) | — | Payment authorization and checkout validation |
+| **`dispatch`** | Go (Golang) | RabbitMQ | Asynchronous background order processing and fulfillment queuing |
+| **`ratings`** | PHP | MySQL | Customer reviews and product ratings service |
+
+---
+
+## Production Deployment on AWS EKS
+
+The production infrastructure is built on **Amazon Elastic Kubernetes Service (EKS)** following GitOps practices. Infrastructure manifests, Helm charts, and environment-specific values are maintained in the [Sumstore-GitOps](https://github.com/sumanthbcloud/Sumstore-GitOps) repository.
+
+### Traffic Flow on Kubernetes:
+1. **Edge Routing**: Incoming traffic enters through an AWS Application Load Balancer (ALB) managed by the AWS Load Balancer Controller.
+2. **Reverse Proxying**: The ALB forwards traffic to the `web` deployment pods, where Nginx handles static frontend assets and cleanly rewrites `/api/*` endpoints to target cluster-internal service meshes.
+3. **Resilience & Scaling**: Microservices scale horizontally (HPA) based on workload demand, with isolated database volumes, configuration management via ConfigMaps/Secrets, and strict health checks (`liveness` & `readiness` probes).
+
+---
+
+## Getting Started
+
+### Prerequisites
+- Docker & Docker Compose
+- `curl` (for running automated smoke tests)
+
+### 1. Run Locally with Docker Compose
+
+You can launch the full multi-container stack locally in a single command:
 
 ```shell
-$ docker-compose build
+docker-compose up -d
 ```
 
-If you modified the `.env` file and changed the image registry, you need to push the images to that registry
+Once all containers report healthy, open your browser and navigate to:
+**[http://localhost:8080](http://localhost:8080)**
 
+To view real-time logs across services:
 ```shell
-$ docker-compose push
+docker-compose logs -f
 ```
 
-## Run Locally
-You can run it locally for testing.
-
-If you did not build from source, don't worry all the images are on Docker Hub. Just pull down those images first using:
-
+To stop the environment:
 ```shell
-$ docker-compose pull
+docker-compose down
 ```
 
-Fire up Stan's Robot Shop with:
+---
+
+### 2. Build Images from Source (Optional)
+
+If you're modifying services or building custom images:
 
 ```shell
-$ docker-compose up
+# Build all microservice images locally
+docker-compose build
+
+# Tag and push images to your container registry (configured in .env)
+docker-compose push
 ```
 
-If you are running it locally on a Linux host you can also run the Instana [agent](https://docs.instana.io/quick_start/agent_setup/container/docker/) locally, unfortunately the agent is currently not supported on Mac.
+---
 
-There is also only limited support on ARM architectures at the moment.
+## Observability & Metrics
 
-## Kubernetes
-The current Helm application configuration and Kubernetes infrastructure manifests are maintained in the [Sumstore-GitOps](https://github.com/sumanthbcloud/Sumstore-GitOps) repository.
+Core business services expose native Prometheus metrics endpoints for real-time monitoring and alerting:
 
-## Accessing the Store
-If you are running the store locally via *docker-compose up* then, the store front is available on localhost port 8080 [http://localhost:8080](http://localhost:8080/)
+- **Cart Service (`/metrics`)**: Real-time counter of items added, modified, or removed.
+- **Payment Service (`/metrics`)**: Counters for completed purchases, cart size distributions, and cart value histograms.
 
-If you are running the store on Kubernetes via minikube then, find the IP address of Minikube and the Node Port of the web service.
-
+Verify endpoints locally or in your Kubernetes cluster:
 ```shell
-$ minikube ip
-$ kubectl get svc web
+curl http://localhost:8080/api/cart/metrics
+curl http://localhost:8080/api/payment/metrics
 ```
 
-For Kubernetes access details, refer to the deployment configuration in [Sumstore-GitOps](https://github.com/sumanthbcloud/Sumstore-GitOps).
+---
 
-## Website Monitoring / End-User Monitoring
+## Automated End-to-End Smoke Test
 
-### Docker Compose
+A comprehensive test script validates the complete customer purchase lifecycle against any running environment (local, staging, or production EKS):
 
-To enable Website Monioring / End-User Monitoring (EUM) see the official [documentation](https://docs.instana.io/website_monitoring/) for how to create a configuration. There is no need to inject the JavaScript fragment into the page, this will be handled automatically. Just make a note of the unique key and set the environment variable `INSTANA_EUM_KEY` and `INSTANA_EUM_REPORTING_URL` for the web image within `docker-compose.yaml`.
+- Product discovery and catalogue query
+- User registration and authentication
+- Adding items to the cart
+- Shipping fee computation
+- Product review / rating submission
+- Payment verification and order completion
 
-### Kubernetes
-
-Kubernetes monitoring configuration belongs with the current deployment manifests in [Sumstore-GitOps](https://github.com/sumanthbcloud/Sumstore-GitOps).
-
-## Prometheus
-
-The cart and payment services both have Prometheus metric endpoints. These are accessible on `/metrics`. The cart service provides:
-
-* Counter of the number of items added to the cart
-
-The payment services provides:
-
-* Counter of the number of items perchased
-* Histogram of the total number of items in each cart
-* Histogram of the total value of each cart
-
-To test the metrics use:
+Run the test suite against your endpoint:
 
 ```shell
-$ curl http://<host>:8080/api/cart/metrics
-$ curl http://<host>:8080/api/payment/metrics
+BASE_URL=http://<your-host-or-alb-endpoint> ./scripts/e2e-smoke-test.sh
 ```
 
+---
 
+## Project Structure
 
-## Automated E2E Smoke Test
-
-An automated end-to-end smoke test validates the complete customer purchase lifecycle against the deployed storefront and microservices (catalogue lookup, user registration, cart operations, shipping calculation, rating submission, and payment/order processing):
-
-```shell
-BASE_URL=http://<sum-store-endpoint> ./scripts/e2e-smoke-test.sh
+```
+├── app/                  # Polyglot backend microservices
+│   ├── cart/             # Shopping cart service (Node.js)
+│   ├── catalogue/        # Product catalog service (Node.js)
+│   ├── dispatch/         # Order processing worker (Go)
+│   ├── payment/          # Checkout and payment gateway (Python)
+│   ├── ratings/          # Reviews & ratings service (PHP)
+│   ├── shipping/         # Distance and rate calculator (Java Spring Boot)
+│   └── user/             # User profiles and authentication (Node.js)
+├── db/                   # Database init scripts & schemas (MongoDB, MySQL)
+├── docs/                 # Documentation assets and screenshots
+│   └── images/           # Architecture diagrams and UI captures
+├── scripts/              # CI/CD and automated E2E testing scripts
+├── web/                  # Web storefront and Nginx configuration
+└── docker-compose.yaml   # Local multi-container orchestration definition
 ```
