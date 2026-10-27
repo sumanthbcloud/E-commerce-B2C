@@ -1,0 +1,8 @@
+# Approved vulnerability exceptions for Shipping service
+# Documentation and justification: security/trivy/shipping-exceptions.md
+
+# CVE-2026-47884: Spring WebMVC XsltView RCE (XsltView not used)
+CVE-2026-47884
+
+# CVE-2026-47890: Spring WebMVC SSE stream corruption with view (SSE not used)
+CVE-2026-47890

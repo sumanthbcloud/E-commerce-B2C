@@ -6,11 +6,15 @@ on:
       - main
     paths:
       - 'app/shipping/**'
+      - '.github/workflows/ci-shipping.yml'
+      - 'security/trivy/**'
   pull_request:
     branches:
       - main
     paths:
       - 'app/shipping/**'
+      - '.github/workflows/ci-shipping.yml'
+      - 'security/trivy/**'
   workflow_dispatch:
 
 permissions:
@@ -20,13 +24,14 @@ permissions:
 jobs:
   pipeline:
     name: Pipeline
-    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/java-service.yml@a6cec1f4665519cf6772dd462f34cf5f3418b7ee
+    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/java-service.yml@0cae020d57053351f08e4299b8061ce8cb7b0bf3
     with:
       service_name: shipping
       java_version: "17"
       build_context: ./app/shipping
       dockerfile: ./app/shipping/Dockerfile
       gitops_values_path: helm/sumstore/values/shipping.yaml
+      trivy_ignore_file: security/trivy/shipping.trivyignore
     secrets: inherit
 
 
