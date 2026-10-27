@@ -20,7 +20,7 @@ permissions:
 jobs:
   pipeline:
     name: Pipeline
-    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/node-service.yml@ce14821d20602d71926589c1982bd5033d4be006
+    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/node-service.yml@8d8bd2afecae47b1d5003bb15324136448228815
     with:
       service_name: cart
       runtime_version: "18"
