@@ -16,8 +16,15 @@ FROM php:8.2-apache-bookworm AS runtime
 EXPOSE 8080
 
 RUN apt-get update && apt-get install -yqq --no-install-recommends \
-    libzip-dev \
+        libzip4 \
+    && apt-get install -yqq --no-install-recommends \
+        libzip-dev \
     && docker-php-ext-install pdo_mysql opcache zip \
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+        libzip-dev \
+        $PHPIZE_DEPS \
+        libc6-dev \
+        linux-libc-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY status.conf /etc/apache2/mods-available/status.conf
