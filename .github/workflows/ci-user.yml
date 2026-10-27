@@ -13,38 +13,20 @@ on:
       - 'app/user/**'
   workflow_dispatch:
 
-env:
-  NODE_VERSION: "18"
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-  application-validation:
-    name: Application Validation
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set Up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Validate Source Syntax
-        run: node --check app/user/server.js
-
   pipeline:
     name: Pipeline
-    needs: application-validation
-    uses: ./.github/workflows/reusable-service-ci.yml
+    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/node-service.yml@v1
     with:
       service_name: user
-      context: ./app/user
+      runtime_version: "18"
+      build_context: ./app/user
       dockerfile: ./app/user/Dockerfile
-      image_name: sumstore/user
-    secrets:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      gitops_values_path: helm/sumstore/values/user.yaml
+    secrets: inherit
 
 
