@@ -7,12 +7,14 @@ on:
     paths:
       - 'app/payment/**'
       - '.github/workflows/ci-payment.yml'
+      - 'security/trivy/payment*'
   pull_request:
     branches:
       - main
     paths:
       - 'app/payment/**'
       - '.github/workflows/ci-payment.yml'
+      - 'security/trivy/payment*'
   workflow_dispatch:
 
 permissions:
@@ -29,4 +31,5 @@ jobs:
       build_context: ./app/payment
       dockerfile: ./app/payment/Dockerfile
       gitops_values_path: helm/sumstore/values/payment.yaml
+      trivy_ignore_file: security/trivy/payment.trivyignore
     secrets: inherit

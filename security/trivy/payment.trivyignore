@@ -1,0 +1,47 @@
+# Approved vulnerability exceptions for Payment service
+# Documentation and justification: security/trivy/payment-exceptions.md
+
+# CVE-2023-45853: zlib1g MiniZip zipOpenNewFileInZip4_6 overflow (MiniZip not in zlib1g; ZIP not used)
+CVE-2023-45853
+
+# CVE-2025-7458: libsqlite3-0 SQLite core integer overflow (SQLite not loaded or used)
+CVE-2025-7458
+
+# CVE-2025-69720: ncurses terminfo buffer overflow (ncurses not loaded; headless daemon)
+CVE-2025-69720
+
+# CVE-2026-11822: libsqlite3-0 SQLite FTS5 code execution (SQLite not loaded or used)
+CVE-2026-11822
+
+# CVE-2026-11824: libsqlite3-0 SQLite query crash / DoS (SQLite not loaded or used)
+CVE-2026-11824
+
+# CVE-2026-16742: systemd/udev systemd-homed privilege escalation (systemd not running; PID 1 is uWSGI)
+CVE-2026-16742
+
+# CVE-2026-41992: gzip LZH decompression buffer overflow (gzip CLI not invoked; 0 subprocesses)
+CVE-2026-41992
+
+# CVE-2026-53613: util-linux mount(8) TOCTOU race (unprivileged UID 10001; mount disallowed; 0 subprocesses)
+CVE-2026-53613
+
+# CVE-2026-53615: util-linux partition parser integer overflow (no disk partitioning / block device access)
+CVE-2026-53615
+
+# CVE-2026-54369: libacl1 symlink traversal privilege escalation (libacl not loaded; no ACL operations)
+CVE-2026-54369
+
+# CVE-2026-76642: util-linux mount helper hook execution (mount helpers not configured; unprivileged)
+CVE-2026-76642
+
+# CVE-2026-78408: util-linux nsenter --join-cgroup cgroup leak (nsenter disallowed; 0 subprocesses)
+CVE-2026-78408
+
+# CVE-2026-78409: util-linux mount path resolution symlink escape (mount not used; unprivileged)
+CVE-2026-78409
+
+# CVE-2026-78410: util-linux restricted bind mount race (bind mounting disallowed; unprivileged)
+CVE-2026-78410
+
+# CVE-2026-9538: perl-base Archive::Tar DoS (Perl not invoked; Python service under uWSGI)
+CVE-2026-9538
