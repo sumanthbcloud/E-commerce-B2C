@@ -6,33 +6,28 @@ on:
       - main
     paths:
       - 'web/**'
+      - 'app/web/**'
       - '.github/workflows/ci-web.yml'
-      - '.github/workflows/reusable-service-ci.yml'
-
   pull_request:
     branches:
       - main
     paths:
       - 'web/**'
+      - 'app/web/**'
       - '.github/workflows/ci-web.yml'
-      - '.github/workflows/reusable-service-ci.yml'
-
   workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   pipeline:
     name: Pipeline
-
-    uses: ./.github/workflows/reusable-service-ci.yml
-
+    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/web-service.yml@e5230ee6923dd44df8ac57df707d9c1ce7584b1e
     with:
       service_name: web
-      context: ./web
-      dockerfile: ./web/Dockerfile
-      image_name: sumstore/web
-
-    secrets:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      build_context: ./app/web
+      dockerfile: ./app/web/Dockerfile
+      gitops_values_path: helm/sumstore/values/web.yaml
+    secrets: inherit
