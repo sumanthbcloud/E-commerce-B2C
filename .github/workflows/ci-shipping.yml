@@ -24,7 +24,7 @@ permissions:
 jobs:
   pipeline:
     name: Pipeline
-    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/java-service.yml@0cae0208faf7533cc7137a5256a11b6b7697839a
+    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/java-service.yml@v1
     with:
       service_name: shipping
       java_version: "17"
