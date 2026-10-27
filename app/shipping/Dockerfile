@@ -1,7 +1,7 @@
 #
 # Stage 1: Build stage
 #
-FROM maven:3.8-openjdk-8 AS builder
+FROM maven:3.9-eclipse-temurin-17 AS builder
 
 WORKDIR /opt/shipping
 
@@ -14,7 +14,7 @@ RUN mvn package -DskipTests
 #
 # Stage 2: Runtime stage
 #
-FROM eclipse-temurin:8-jre-focal AS runtime
+FROM eclipse-temurin:17-jre-jammy AS runtime
 
 EXPOSE 8080
 
