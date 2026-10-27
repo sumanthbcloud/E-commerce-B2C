@@ -6,45 +6,27 @@ on:
       - main
     paths:
       - 'app/payment/**'
+      - '.github/workflows/ci-payment.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'app/payment/**'
+      - '.github/workflows/ci-payment.yml'
   workflow_dispatch:
 
-env:
-  PYTHON_VERSION: "3.9"
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-  application-validation:
-    name: Application Validation
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set Up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Validate Source Syntax
-        run: python -m py_compile app/payment/*.py
-
   pipeline:
     name: Pipeline
-    needs: application-validation
-    uses: ./.github/workflows/reusable-service-ci.yml
+    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/python-service.yml@673d47c230d4f59a84c5002ad9524975e58e05f4
     with:
       service_name: payment
-      context: ./app/payment
+      python_version: "3.9"
+      build_context: ./app/payment
       dockerfile: ./app/payment/Dockerfile
-      image_name: sumstore/payment
-    secrets:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-
+      gitops_values_path: helm/sumstore/values/payment.yaml
+    secrets: inherit
