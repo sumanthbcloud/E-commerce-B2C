@@ -25,7 +25,7 @@ jobs:
     uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/python-service.yml@673d47c230d4f59a84c5002ad9524975e58e05f4
     with:
       service_name: payment
-      python_version: "3.9"
+      python_version: "3.12"
       build_context: ./app/payment
       dockerfile: ./app/payment/Dockerfile
       gitops_values_path: helm/sumstore/values/payment.yaml
