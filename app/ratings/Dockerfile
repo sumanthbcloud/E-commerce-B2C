@@ -17,6 +17,10 @@ EXPOSE 8080
 
 RUN apt-get update && apt-get install -yqq --no-install-recommends \
         libzip4 \
+        libexpat1 \
+        libssl3 \
+        openssl \
+        libbrotli1 \
     && apt-get install -yqq --no-install-recommends \
         libzip-dev \
     && docker-php-ext-install pdo_mysql opcache zip \

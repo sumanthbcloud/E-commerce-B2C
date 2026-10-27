@@ -1,0 +1,66 @@
+# Ratings Service Trivy Ignore File
+# Runtime: php:8.2-apache-bookworm (PHP 8.2.35 / Apache 2.4.68 / Debian 12.15 Bookworm)
+# Date: October 27, 2026
+# See security/trivy/ratings-exceptions.md for full runtime applicability assessments.
+
+# zlib1g (MiniZip contrib symbol absent from libz.so.1; MiniZip uninstalled)
+CVE-2023-45853
+
+# libsqlite3-0 (SQLite query engine / FTS5 unused; Ratings uses MySQL exclusively)
+CVE-2025-7458
+CVE-2026-11822
+CVE-2026-11824
+
+# libxml2 (Ratings is pure JSON REST API; XML parser, XPath, and Python bindings unused)
+CVE-2026-6653
+CVE-2026-74860
+CVE-2026-86138
+CVE-2026-86140
+CVE-2026-86142
+CVE-2026-86143
+CVE-2026-86144
+
+# apache2 / apache2-bin / apache2-data / apache2-utils
+# Vulnerable modules disabled (mod_heartmonitor, mod_charset_lite, mod_vhost_alias, mod_xml2enc, mod_proxy_uwsgi, mod_auth_digest)
+# mod_rewrite does not use %{LA-U:...} lookahead directives
+CVE-2026-46729
+CVE-2026-56153
+CVE-2026-56154
+CVE-2026-63292
+CVE-2026-63686
+CVE-2026-63718
+CVE-2026-73636
+
+# curl / libcurl4 (Catalogue HTTP GET /product/{sku} only; no SSH/SFTP, no proxy, no cookies, no connection pooling)
+CVE-2026-12064
+CVE-2026-6276
+CVE-2026-8286
+CVE-2026-8458
+CVE-2026-8927
+
+# util-linux / bsdutils / libblkid1 / libmount1 / libsmartcols1 / libuuid1 / mount / util-linux-extra
+# Container runs as unprivileged user www-data (UID 33) without CAP_SYS_ADMIN; mount/nsenter cannot execute
+CVE-2026-53613
+CVE-2026-53615
+CVE-2026-76642
+CVE-2026-78408
+CVE-2026-78409
+CVE-2026-78410
+
+# ncurses (libncursesw6, libtinfo6, ncurses-base, ncurses-bin - Headless daemon; no curses TTY)
+CVE-2025-69720
+
+# systemd / udev (libsystemd0, libudev1 - apache2-foreground PID 1; systemd-homed absent)
+CVE-2026-16742
+
+# perl (libperl5.36, perl, perl-base, perl-modules-5.36 - PHP application; Perl and Archive::Tar unused)
+CVE-2026-9538
+
+# gzip (standalone gzip LZH decompression unused; Apache uses mod_deflate zlib)
+CVE-2026-41992
+
+# libacl1 (POSIX ACL manipulation unused; UID 33 www-data process)
+CVE-2026-54369
+
+# libldap-2.5-0 (LDAP authentication and modules disabled; Ratings does not use LDAP)
+CVE-2023-2953

@@ -7,12 +7,14 @@ on:
     paths:
       - 'app/ratings/**'
       - '.github/workflows/ci-ratings.yml'
+      - 'security/trivy/ratings*'
   pull_request:
     branches:
       - main
     paths:
       - 'app/ratings/**'
       - '.github/workflows/ci-ratings.yml'
+      - 'security/trivy/ratings*'
   workflow_dispatch:
 
 permissions:
@@ -29,5 +31,6 @@ jobs:
       build_context: ./app/ratings
       dockerfile: ./app/ratings/Dockerfile
       gitops_values_path: helm/sumstore/values/ratings.yaml
+      trivy_ignore_file: security/trivy/ratings.trivyignore
     secrets: inherit
 
