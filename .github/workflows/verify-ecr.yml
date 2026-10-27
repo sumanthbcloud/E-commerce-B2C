@@ -1,0 +1,29 @@
+name: Verify ECR Authentication
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  verify:
+    name: Verify AWS OIDC and ECR Access
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::961544628309:role/github-actions-sumstore-apps
+          aws-region: us-east-1
+
+      - name: Verify Caller Identity
+        run: aws sts get-caller-identity
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Verify ECR Repository Access
+        run: aws ecr describe-repositories --repository-names sumstore/cart --region us-east-1
