@@ -13,11 +13,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
-/**
- * @Route("/api")
- */
+#[Route('/api')]
 class RatingsApiController implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
@@ -38,9 +36,7 @@ class RatingsApiController implements LoggerAwareInterface
         $this->catalogueService = $catalogueService;
     }
 
-    /**
-     * @Route(path="/rate/{sku}/{score}", methods={"PUT"})
-     */
+    #[Route('/rate/{sku}/{score}', methods: ['PUT'])]
     public function put(Request $request, string $sku, int $score): Response
     {
         $score = min(max(1, $score), 5);
@@ -72,9 +68,7 @@ class RatingsApiController implements LoggerAwareInterface
         }
     }
 
-    /**
-     * @Route("/fetch/{sku}", methods={"GET"})
-     */
+    #[Route('/fetch/{sku}', methods: ['GET'])]
     public function get(Request $request, string $sku): Response
     {
         try {

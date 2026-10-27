@@ -1,18 +1,17 @@
 #
 # Stage 1: Build & Vendor Dependencies
 #
-FROM composer:2.2 AS builder
+FROM composer:2 AS builder
 
 WORKDIR /app
 
-COPY html/composer.json ./
-RUN composer config platform.php 7.4.33 && \
-    composer install --no-dev --optimize-autoloader
+COPY html/composer.json html/composer.lock ./
+RUN composer install --no-dev --optimize-autoloader
 
 #
 # Stage 2: Runtime
 #
-FROM php:7.4-apache AS runtime
+FROM php:8.2-apache-bookworm AS runtime
 
 EXPOSE 8080
 
