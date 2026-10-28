@@ -231,9 +231,13 @@ app.get('/history/:id', (req, res) => {
 });
 
 // connect to Redis
-var redisClient = redis.createClient({
+var redisOptions = {
     host: process.env.REDIS_HOST || 'redis'
-});
+};
+if (process.env.REDIS_PASSWORD) {
+    redisOptions.password = process.env.REDIS_PASSWORD;
+}
+var redisClient = redis.createClient(redisOptions);
 
 redisClient.on('error', (e) => {
     logger.error('Redis ERROR', e);

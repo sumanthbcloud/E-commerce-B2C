@@ -364,9 +364,13 @@ function saveCart(id, cart) {
 }
 
 // connect to Redis
-var redisClient = redis.createClient({
+var redisOptions = {
     host: redisHost
-});
+};
+if (process.env.REDIS_PASSWORD) {
+    redisOptions.password = process.env.REDIS_PASSWORD;
+}
+var redisClient = redis.createClient(redisOptions);
 
 redisClient.on('error', (e) => {
     logger.error('Redis ERROR', e);
