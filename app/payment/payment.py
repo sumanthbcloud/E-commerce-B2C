@@ -29,6 +29,35 @@ PromMetrics['SOLD_COUNTER'] = Counter('sold_count', 'Running count of items sold
 PromMetrics['AUS'] = Histogram('units_sold', 'Avergae Unit Sale', buckets=(1, 2, 5, 10, 100))
 PromMetrics['AVS'] = Histogram('cart_value', 'Avergae Value Sale', buckets=(100, 200, 500, 1000, 2000, 5000, 10000))
 
+HTTP_REQUESTS_TOTAL = Counter(
+    'http_requests_total',
+    'Total number of HTTP requests',
+    ['method', 'route', 'status_code']
+)
+HTTP_REQUEST_DURATION_SECONDS = Histogram(
+    'http_request_duration_seconds',
+    'HTTP request duration in seconds',
+    ['method', 'route', 'status_code'],
+    buckets=(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10)
+)
+
+
+@app.before_request
+def before_request():
+    request._start_time = time.time()
+
+
+@app.after_request
+def after_request(response):
+    if hasattr(request, '_start_time'):
+        duration = time.time() - request._start_time
+        route = request.url_rule.rule if request.url_rule else 'unmatched'
+        method = request.method
+        status_code = str(response.status_code)
+        HTTP_REQUESTS_TOTAL.labels(method=method, route=route, status_code=status_code).inc()
+        HTTP_REQUEST_DURATION_SECONDS.labels(method=method, route=route, status_code=status_code).observe(duration)
+    return response
+
 
 @app.errorhandler(Exception)
 def exception_handler(err):
@@ -42,11 +71,7 @@ def health():
 # Prometheus
 @app.route('/metrics', methods=['GET'])
 def metrics():
-    res = []
-    for m in PromMetrics.values():
-        res.append(prometheus_client.generate_latest(m))
-
-    return Response(res, mimetype='text/plain')
+    return Response(prometheus_client.generate_latest(), mimetype=prometheus_client.CONTENT_TYPE_LATEST)
 
 
 @app.route('/pay/<id>', methods=['POST'])

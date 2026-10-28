@@ -8,9 +8,26 @@ const expPino = require('express-pino-logger');
 const promClient = require('prom-client');
 const Registry = promClient.Registry;
 const register = new Registry();
+promClient.collectDefaultMetrics({ register });
+
 const counter = new promClient.Counter({
     name: 'items_added',
     help: 'running count of items added to cart',
+    registers: [register]
+});
+
+const httpRequestsTotal = new promClient.Counter({
+    name: 'http_requests_total',
+    help: 'Total number of HTTP requests',
+    labelNames: ['method', 'route', 'status_code'],
+    registers: [register]
+});
+
+const httpRequestDurationSeconds = new promClient.Histogram({
+    name: 'http_request_duration_seconds',
+    help: 'HTTP request duration in seconds',
+    labelNames: ['method', 'route', 'status_code'],
+    buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
     registers: [register]
 });
 
@@ -39,6 +56,20 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use((req, res, next) => {
+    const start = process.hrtime();
+    res.on('finish', () => {
+        const diff = process.hrtime(start);
+        const duration = diff[0] + diff[1] / 1e9;
+        const route = req.route ? (req.baseUrl ? req.baseUrl + req.route.path : req.route.path) : 'unmatched';
+        const method = req.method;
+        const statusCode = res.statusCode ? res.statusCode.toString() : 'unknown';
+        httpRequestsTotal.inc({ method, route, status_code: statusCode });
+        httpRequestDurationSeconds.observe({ method, route, status_code: statusCode }, duration);
+    });
+    next();
+});
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
@@ -51,9 +82,13 @@ app.get('/health', (req, res) => {
 });
 
 // Prometheus
-app.get('/metrics', (req, res) => {
-    res.header('Content-Type', 'text/plain');
-    res.send(register.metrics());
+app.get('/metrics', async (req, res) => {
+    try {
+        res.set('Content-Type', register.contentType);
+        res.end(await register.metrics());
+    } catch (err) {
+        res.status(500).end(err);
+    }
 });
 
 
