@@ -26,6 +26,12 @@ class HealthController implements LoggerAwareInterface
         $this->healthCheckService = $healthCheckService;
     }
 
+    #[Route('/health', methods: ['GET'])]
+    public function health(): Response
+    {
+        return new JsonResponse(['status' => 'OK'], Response::HTTP_OK);
+    }
+
     #[Route('/_health', methods: ['GET'])]
     public function __invoke(Request $request)
     {
