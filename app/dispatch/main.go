@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -12,6 +13,8 @@ import (
 	ot "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/streadway/amqp"
 )
 
@@ -26,7 +29,38 @@ var (
 	rabbitCloseError chan *amqp.Error
 	rabbitReady      chan bool
 	errorPercent     int
+
+	messagesConsumedTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "dispatch_messages_consumed_total",
+			Help: "Total number of RabbitMQ messages consumed by dispatch worker",
+		},
+		[]string{"queue"},
+	)
+
+	ordersProcessedTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "dispatch_orders_processed_total",
+			Help: "Total number of orders processed by dispatch worker",
+		},
+		[]string{"status"},
+	)
+
+	messageProcessingDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "dispatch_message_processing_duration_seconds",
+			Help:    "Duration of dispatch order processing in seconds",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"status"},
+	)
 )
+
+func init() {
+	prometheus.MustRegister(messagesConsumedTotal)
+	prometheus.MustRegister(ordersProcessedTotal)
+	prometheus.MustRegister(messageProcessingDuration)
+}
 
 func connectToRabbitMQ(uri string) *amqp.Connection {
 	for {
@@ -96,6 +130,8 @@ func getOrderId(order []byte) string {
 }
 
 func createSpan(headers map[string]interface{}, order string) {
+	start := time.Now()
+
 	// headers is map[string]interface{}
 	// carrier is map[string]string
 	carrier := make(ot.TextMapCarrier)
@@ -132,8 +168,10 @@ func createSpan(headers map[string]interface{}, order string) {
 	span.LogFields(otlog.String("orderid", order))
 	defer span.Finish()
 
+	status := "success"
 	time.Sleep(time.Duration(42+rand.Int63n(42)) * time.Millisecond)
 	if rand.Intn(100) < errorPercent {
+		status = "error"
 		span.SetTag("error", true)
 		span.LogFields(
 			otlog.String("error.kind", "Exception"),
@@ -142,6 +180,10 @@ func createSpan(headers map[string]interface{}, order string) {
 	}
 
 	processSale(span)
+
+	duration := time.Since(start).Seconds()
+	ordersProcessedTotal.WithLabelValues(status).Inc()
+	messageProcessingDuration.WithLabelValues(status).Observe(duration)
 }
 
 func processSale(parentSpan ot.Span) {
@@ -153,8 +195,38 @@ func processSale(parentSpan ot.Span) {
 	time.Sleep(time.Duration(42+rand.Int63n(42)) * time.Millisecond)
 }
 
+func startMetricsServer() {
+	metricsPort := os.Getenv("METRICS_PORT")
+	if metricsPort == "" {
+		metricsPort = "8080"
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"OK"}`))
+	})
+
+	server := &http.Server{
+		Addr:         ":" + metricsPort,
+		Handler:      mux,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+
+	log.Printf("Starting metrics and health server on :%s", metricsPort)
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Printf("Metrics server error: %v", err)
+	}
+}
+
 func main() {
 	rand.Seed(time.Now().Unix())
+
+	// Start metrics and health HTTP server
+	go startMetricsServer()
 
 	// Init amqpUri
 	// get host and credentials from environment
@@ -204,6 +276,7 @@ func main() {
 			failOnError(err, "Failed to consume")
 
 			for d := range msgs {
+				messagesConsumedTotal.WithLabelValues("orders").Inc()
 				log.Printf("Order %s\n", d.Body)
 				log.Printf("Headers %v\n", d.Headers)
 				id := getOrderId(d.Body)

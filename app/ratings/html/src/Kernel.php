@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Instana\RobotShop\Ratings;
 
 use Instana\RobotShop\Ratings\Controller\HealthController;
+use Instana\RobotShop\Ratings\Controller\MetricsController;
 use Instana\RobotShop\Ratings\Controller\RatingsApiController;
+use Instana\RobotShop\Ratings\EventListener\MetricsEventSubscriber;
 use Instana\RobotShop\Ratings\Service\CatalogueService;
 use Instana\RobotShop\Ratings\Service\HealthCheckService;
+use Instana\RobotShop\Ratings\Service\MetricsService;
 use Instana\RobotShop\Ratings\Service\RatingsService;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
@@ -110,6 +113,17 @@ class Kernel extends BaseKernel implements EventSubscriberInterface
         $c->register(RatingsApiController::class)
             ->addMethodCall('setLogger', [new Reference('logger')])
             ->addTag('controller.service_arguments')
+            ->setAutowired(true);
+
+        $c->register(MetricsService::class)
+            ->setAutowired(true);
+
+        $c->register(MetricsController::class)
+            ->addTag('controller.service_arguments')
+            ->setAutowired(true);
+
+        $c->register(MetricsEventSubscriber::class)
+            ->addTag('kernel.event_subscriber')
             ->setAutowired(true);
     }
 
