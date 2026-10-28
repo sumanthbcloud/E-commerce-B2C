@@ -409,7 +409,7 @@ jobs:
           esac
 
 
-          VALUES_FILE="$GITOPS_DIR/helm/sumstore/values/${SERVICE_NAME}.yaml"
+          VALUES_FILE="$GITOPS_DIR/apps/${SERVICE_NAME}/values.yaml"
 
 
           echo "================================================="
@@ -489,7 +489,7 @@ jobs:
 
 
           git add \
-            "helm/sumstore/values/${SERVICE_NAME}.yaml"
+            "apps/${SERVICE_NAME}/values.yaml"
 
 
           if git diff --staged --quiet; then

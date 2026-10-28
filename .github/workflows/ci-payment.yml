@@ -24,12 +24,12 @@ permissions:
 jobs:
   pipeline:
     name: Pipeline
-    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/python-service.yml@673d47c230d4f59a84c5002ad9524975e58e05f4
+    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/python-service.yml@v1
     with:
       service_name: payment
       python_version: "3.12"
       build_context: ./app/payment
       dockerfile: ./app/payment/Dockerfile
-      gitops_values_path: helm/sumstore/values/payment.yaml
+      gitops_values_path: apps/payment/values.yaml
       trivy_ignore_file: security/trivy/payment.trivyignore
     secrets: inherit

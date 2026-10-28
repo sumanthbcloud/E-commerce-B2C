@@ -26,7 +26,7 @@ jobs:
       runtime_version: "18"
       build_context: ./app/user
       dockerfile: ./app/user/Dockerfile
-      gitops_values_path: helm/sumstore/values/user.yaml
+      gitops_values_path: apps/user/values.yaml
     secrets: inherit
 
 

@@ -24,13 +24,13 @@ permissions:
 jobs:
   pipeline:
     name: Pipeline
-    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/php-service.yml@be11e4a76f5d06db7546306f2163114e23676509
+    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/php-service.yml@v1
     with:
       service_name: ratings
       php_version: "8.2"
       build_context: ./app/ratings
       dockerfile: ./app/ratings/Dockerfile
-      gitops_values_path: helm/sumstore/values/ratings.yaml
+      gitops_values_path: apps/ratings/values.yaml
       trivy_ignore_file: security/trivy/ratings.trivyignore
     secrets: inherit
 

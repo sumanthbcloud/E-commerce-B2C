@@ -24,10 +24,10 @@ permissions:
 jobs:
   pipeline:
     name: Pipeline
-    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/web-service.yml@e5230ee6923dd44df8ac57df707d9c1ce7584b1e
+    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/web-service.yml@v1
     with:
       service_name: web
       build_context: ./app/web
       dockerfile: ./app/web/Dockerfile
-      gitops_values_path: helm/sumstore/values/web.yaml
+      gitops_values_path: apps/web/values.yaml
     secrets: inherit

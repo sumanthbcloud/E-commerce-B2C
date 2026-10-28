@@ -26,7 +26,7 @@ jobs:
       runtime_version: "18"
       build_context: ./app/catalogue
       dockerfile: ./app/catalogue/Dockerfile
-      gitops_values_path: helm/sumstore/values/catalogue.yaml
+      gitops_values_path: apps/catalogue/values.yaml
     secrets: inherit
 
 

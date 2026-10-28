@@ -30,7 +30,7 @@ jobs:
       java_version: "17"
       build_context: ./app/shipping
       dockerfile: ./app/shipping/Dockerfile
-      gitops_values_path: helm/sumstore/values/shipping.yaml
+      gitops_values_path: apps/shipping/values.yaml
       trivy_ignore_file: security/trivy/shipping.trivyignore
     secrets: inherit
 

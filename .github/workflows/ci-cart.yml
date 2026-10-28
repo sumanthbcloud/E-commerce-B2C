@@ -26,5 +26,5 @@ jobs:
       runtime_version: "18"
       build_context: ./app/cart
       dockerfile: ./app/cart/Dockerfile
-      gitops_values_path: helm/sumstore/values/cart.yaml
+      gitops_values_path: apps/cart/values.yaml
     secrets: inherit

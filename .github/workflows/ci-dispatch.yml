@@ -22,12 +22,12 @@ permissions:
 jobs:
   pipeline:
     name: Pipeline
-    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/go-service.yml@ac520beca5b1aeacbd8e2f3fb1c5111183bc9995
+    uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/go-service.yml@v1
     with:
       service_name: dispatch
       go_version: "1.23"
       build_context: ./app/dispatch
       dockerfile: ./app/dispatch/Dockerfile
-      gitops_values_path: helm/sumstore/values/dispatch.yaml
+      gitops_values_path: apps/dispatch/values.yaml
     secrets: inherit
 
