@@ -8,6 +8,14 @@ The application delivers an end-to-end shopping experience—from product discov
 
 ---
 
+## End-to-End DevOps & GitOps Architecture
+
+The comprehensive platform architecture spans five specialized Git repositories, automated CI security and quality gates, OCI-based Helm chart delivery, and autonomous GitOps deployment via Argo CD onto AWS EKS:
+
+![SUM Store – End-to-End DevOps & GitOps Architecture](docs/images/project-architecture.png)
+
+---
+
 ## Architecture & Technology Stack
 
 SUM Store was built from the ground up to showcase modern polyglot microservice design patterns. Each service runs in its own container, uses the best-fit database technology for its data access pattern, and communicates via fast REST APIs or asynchronous event queues.
