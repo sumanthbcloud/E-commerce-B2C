@@ -6,14 +6,12 @@ on:
       - main
     paths:
       - 'web/**'
-      - 'app/web/**'
       - '.github/workflows/ci-web.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'web/**'
-      - 'app/web/**'
       - '.github/workflows/ci-web.yml'
   workflow_dispatch:
 
@@ -27,7 +25,7 @@ jobs:
     uses: sumanthbcloud/Sumstore-Platform-Workflows/.github/workflows/web-service.yml@v1
     with:
       service_name: web
-      build_context: ./app/web
-      dockerfile: ./app/web/Dockerfile
+      build_context: ./web
+      dockerfile: ./web/Dockerfile
       gitops_values_path: apps/web/values.yaml
     secrets: inherit
